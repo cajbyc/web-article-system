@@ -18,6 +18,10 @@ import Footer from '../components/Footer.vue'
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: #f8f9fb;
+  background-image:
+    radial-gradient(circle at 20% 80%, rgba(45, 106, 79, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(45, 106, 79, 0.02) 0%, transparent 50%);
 }
 
 .main-content {
@@ -25,7 +29,7 @@ import Footer from '../components/Footer.vue'
   width: 100%;
   max-width: 1200px;
   margin: 0 auto;
-  padding: 20px;
+  padding: 24px 20px;
 
   @media (max-width: 1240px) {
     max-width: 100%;

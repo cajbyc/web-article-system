@@ -2,15 +2,22 @@
   <header class="app-header">
     <div class="header-inner">
       <div class="logo" @click="$router.push('/')">
-        <el-icon :size="24"><Edit /></el-icon>
-        <span>文章管理系统</span>
+        <div class="logo-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 19l7-7 3 3-7 7-3-3z"/>
+            <path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>
+            <path d="M2 2l7.586 7.586"/>
+            <circle cx="11" cy="11" r="2"/>
+          </svg>
+        </div>
+        <span class="logo-text">墨笔</span>
       </div>
 
       <!-- 全局搜索框 -->
       <div class="global-search">
         <el-input
           v-model="searchKeyword"
-          placeholder="搜索文章标题或内容..."
+          placeholder="搜索文章..."
           :prefix-icon="Search"
           clearable
           size="default"
@@ -19,64 +26,63 @@
         />
       </div>
 
-      <el-menu
-        :default-active="activeMenu"
-        mode="horizontal"
-        :ellipsis="false"
-        router
-        class="nav-menu"
-      >
-        <el-menu-item index="/">首页</el-menu-item>
-        <el-menu-item index="/articles">文章列表</el-menu-item>
-        <el-menu-item index="/about">使用说明</el-menu-item>
+      <nav class="nav-menu">
+        <router-link to="/" class="nav-link" :class="{ active: $route.path === '/' }">首页</router-link>
+        <router-link to="/articles" class="nav-link" :class="{ active: $route.path.startsWith('/article') }">文章</router-link>
+        <router-link to="/about" class="nav-link" :class="{ active: $route.path === '/about' }">说明</router-link>
 
-        <!-- 未登录时显示 -->
+        <!-- 未登录 -->
         <template v-if="!userStore.userInfo">
-          <el-menu-item index="/login">登录</el-menu-item>
-          <el-menu-item index="/register">注册</el-menu-item>
+          <router-link to="/login" class="nav-link nav-link-btn">登录</router-link>
+          <router-link to="/register" class="nav-link nav-link-btn filled">注册</router-link>
         </template>
 
-        <!-- 登录后显示 -->
+        <!-- 已登录 -->
         <template v-else>
-          <el-menu-item index="/admin/dashboard" v-if="userStore.userInfo?.role === 'admin'">
-            <el-icon><DataAnalysis /></el-icon> 管理面板
-          </el-menu-item>
-          <el-menu-item index="/article/create" v-if="isEditor">
-            <el-icon><EditPen /></el-icon> 写文章
-          </el-menu-item>
-          <el-menu-item index="/my/articles" v-if="isEditor">我的文章</el-menu-item>
+          <router-link v-if="userStore.userInfo?.role === 'admin'" to="/admin/dashboard" class="nav-link" :class="{ active: $route.path.startsWith('/admin') }">
+            管理
+          </router-link>
+          <router-link v-if="isEditor" to="/article/create" class="nav-link" :class="{ active: $route.path === '/article/create' }">
+            写文章
+          </router-link>
+          <router-link v-if="isEditor" to="/my/articles" class="nav-link" :class="{ active: $route.path === '/my/articles' }">
+            我的
+          </router-link>
 
-          <el-sub-menu :index="'profile'">
-            <template #title>
-              <el-avatar :size="28" style="margin-right: 6px;">
+          <el-dropdown trigger="click" @command="handleCommand">
+            <div class="user-avatar-wrap">
+              <el-avatar :size="30">
                 {{ userStore.userInfo.username?.charAt(0)?.toUpperCase() || 'U' }}
               </el-avatar>
-              {{ userStore.userInfo.username }}
+            </div>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="/profile">
+                  <el-icon><UserFilled /></el-icon>个人中心
+                </el-dropdown-item>
+                <el-dropdown-item v-if="userStore.userInfo?.role === 'admin'" command="/admin/applications">
+                  <el-icon><Checked /></el-icon>角色审批
+                </el-dropdown-item>
+                <el-dropdown-item v-if="isEditor" command="/my/recycle">
+                  <el-icon><Delete /></el-icon>回收站
+                </el-dropdown-item>
+                <el-dropdown-item command="/my/collects">
+                  <el-icon><Star /></el-icon>我的收藏
+                </el-dropdown-item>
+                <el-dropdown-item command="/my/likes">
+                  <el-icon><StarFilled /></el-icon>我的点赞
+                </el-dropdown-item>
+                <el-dropdown-item command="/my/comments">
+                  <el-icon><ChatDotRound /></el-icon>我的评论
+                </el-dropdown-item>
+                <el-dropdown-item divided command="logout">
+                  <el-icon><SwitchButton /></el-icon>退出登录
+                </el-dropdown-item>
+              </el-dropdown-menu>
             </template>
-            <el-menu-item index="/profile">
-              <el-icon><UserFilled /></el-icon>个人中心
-            </el-menu-item>
-            <el-menu-item index="/admin/applications" v-if="userStore.userInfo?.role === 'admin'">
-              <el-icon><Checked /></el-icon>角色审批
-            </el-menu-item>
-            <el-menu-item index="/my/recycle" v-if="isEditor">
-              <el-icon><Delete /></el-icon>回收站
-            </el-menu-item>
-            <el-menu-item index="/my/collects">
-              <el-icon><Star /></el-icon>我的收藏
-            </el-menu-item>
-            <el-menu-item index="/my/likes">
-              <el-icon><StarFilled /></el-icon>我的点赞
-            </el-menu-item>
-            <el-menu-item index="/my/comments">
-              <el-icon><ChatDotRound /></el-icon>我的评论
-            </el-menu-item>
-            <el-menu-item index="logout" divided @click="handleLogout">
-              <el-icon><SwitchButton /></el-icon>退出登录
-            </el-menu-item>
-          </el-sub-menu>
+          </el-dropdown>
         </template>
-      </el-menu>
+      </nav>
     </div>
   </header>
 </template>
@@ -85,7 +91,7 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { Edit, UserFilled, SwitchButton, EditPen, Delete, Star, StarFilled, ChatDotRound, DataAnalysis, Search, Checked } from '@element-plus/icons-vue'
+import { UserFilled, SwitchButton, Delete, Star, StarFilled, ChatDotRound, Search, Checked } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
@@ -93,11 +99,6 @@ const router = useRouter()
 const userStore = useUserStore()
 
 const searchKeyword = ref('')
-
-const activeMenu = computed(() => {
-  if (route.path.startsWith('/article/')) return '/articles'
-  return route.path
-})
 
 const isEditor = computed(() => {
   const role = userStore.userInfo?.role
@@ -113,17 +114,23 @@ function handleSearch() {
   }
 }
 
-function handleLogout() {
-  userStore.logout()
-  ElMessage.success('已退出登录')
-  router.push('/login')
+function handleCommand(cmd) {
+  if (cmd === 'logout') {
+    userStore.logout()
+    ElMessage.success('已退出登录')
+    router.push('/login')
+  } else {
+    router.push(cmd)
+  }
 }
 </script>
 
 <style lang="scss" scoped>
 .app-header {
-  background: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.82);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
   position: sticky;
   top: 0;
   z-index: 100;
@@ -135,7 +142,8 @@ function handleLogout() {
   display: flex;
   align-items: center;
   padding: 0 20px;
-  gap: 12px;
+  height: 58px;
+  gap: 20px;
 
   @media (max-width: 1240px) {
     padding: 0 16px;
@@ -146,17 +154,51 @@ function handleLogout() {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 18px;
-  font-weight: bold;
-  color: #1677ff;
   cursor: pointer;
   white-space: nowrap;
   flex-shrink: 0;
+
+  .logo-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #2d6a4f, #40916c);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    transition: transform 0.2s;
+  }
+
+  &:hover .logo-icon {
+    transform: rotate(-8deg) scale(1.05);
+  }
+
+  .logo-text {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1a2e;
+    letter-spacing: -0.3px;
+  }
 }
 
 .global-search {
-  width: 240px;
+  width: 220px;
   flex-shrink: 0;
+
+  :deep(.el-input__wrapper) {
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.03);
+    box-shadow: none !important;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+
+    &:hover, &.is-focus {
+      background: #fff;
+      border-color: rgba(45, 106, 79, 0.25);
+      box-shadow: 0 2px 8px rgba(45, 106, 79, 0.08) !important;
+    }
+  }
 
   @media (max-width: 768px) {
     width: 140px;
@@ -165,11 +207,70 @@ function handleLogout() {
 
 .nav-menu {
   flex: 1;
-  border-bottom: none !important;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  justify-content: flex-end;
+}
 
-  :deep(.el-menu-item),
-  :deep(.el-sub-menu__title) {
-    font-size: 15px;
+.nav-link {
+  padding: 6px 14px;
+  font-size: 14px;
+  color: #4a4a68;
+  border-radius: 6px;
+  transition: all 0.2s;
+  white-space: nowrap;
+  font-weight: 500;
+
+  &:hover {
+    color: #2d6a4f;
+    background: rgba(45, 106, 79, 0.06);
+  }
+
+  &.active {
+    color: #2d6a4f;
+    background: rgba(45, 106, 79, 0.08);
+    font-weight: 600;
+  }
+
+  &.nav-link-btn {
+    color: #2d6a4f;
+    border: 1px solid rgba(45, 106, 79, 0.25);
+    margin-left: 4px;
+
+    &:hover {
+      background: rgba(45, 106, 79, 0.06);
+    }
+
+    &.filled {
+      background: #2d6a4f;
+      color: #fff;
+      border-color: #2d6a4f;
+
+      &:hover {
+        background: #40916c;
+        border-color: #40916c;
+        color: #fff;
+      }
+    }
+  }
+}
+
+.user-avatar-wrap {
+  cursor: pointer;
+  margin-left: 8px;
+  padding: 2px;
+  border-radius: 50%;
+  transition: box-shadow 0.2s;
+
+  &:hover {
+    box-shadow: 0 0 0 2px rgba(45, 106, 79, 0.2);
+  }
+}
+
+:deep(.el-dropdown-menu__item) {
+  .el-icon {
+    margin-right: 6px;
   }
 }
 </style>

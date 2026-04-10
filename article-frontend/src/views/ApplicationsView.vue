@@ -1,17 +1,15 @@
 <template>
   <div class="applications-view">
-    <el-card shadow="never">
-      <template #header>
-        <div class="card-header">
-          <h2>角色申请审批</h2>
-          <el-radio-group v-model="filterStatus" size="small" @change="fetchApplications">
-            <el-radio-button value="">全部</el-radio-button>
-            <el-radio-button value="pending">待审核</el-radio-button>
-            <el-radio-button value="approved">已批准</el-radio-button>
-            <el-radio-button value="rejected">已拒绝</el-radio-button>
-          </el-radio-group>
-        </div>
-      </template>
+    <div class="page-card">
+      <div class="page-header">
+        <h2>角色申请审批</h2>
+        <el-radio-group v-model="filterStatus" size="small" @change="fetchApplications">
+          <el-radio-button value="">全部</el-radio-button>
+          <el-radio-button value="pending">待审核</el-radio-button>
+          <el-radio-button value="approved">已批准</el-radio-button>
+          <el-radio-button value="rejected">已拒绝</el-radio-button>
+        </el-radio-group>
+      </div>
 
       <el-table :data="applications" v-loading="loading" stripe>
         <el-table-column label="申请人" min-width="120">
@@ -21,7 +19,7 @@
         </el-table-column>
         <el-table-column label="申请角色" width="100">
           <template #default="{ row }">
-            <el-tag>{{ roleLabel(row.toRole) }}</el-tag>
+            <el-tag size="small">{{ roleLabel(row.toRole) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="申请理由" prop="reason" min-width="200">
@@ -31,7 +29,7 @@
         </el-table-column>
         <el-table-column label="状态" width="100">
           <template #default="{ row }">
-            <el-tag :type="statusType(row.status)">{{ statusLabel(row.status) }}</el-tag>
+            <el-tag :type="statusType(row.status)" size="small">{{ statusLabel(row.status) }}</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="申请时间" width="170">
@@ -45,13 +43,13 @@
               <el-button type="success" size="small" @click="handleReview(row, 'approved')">批准</el-button>
               <el-button type="danger" size="small" @click="handleReview(row, 'rejected')">拒绝</el-button>
             </template>
-            <span v-else style="color: #909399;">已处理</span>
+            <span v-else style="color: #8e8ea0;">已处理</span>
           </template>
         </el-table-column>
       </el-table>
 
       <el-empty v-if="!loading && applications.length === 0" description="暂无申请记录" />
-    </el-card>
+    </div>
 
     <!-- 审批对话框 -->
     <el-dialog v-model="reviewDialogVisible" :title="reviewAction === 'approved' ? '批准申请' : '拒绝申请'" width="460px" destroy-on-close>
@@ -71,14 +69,13 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import request from '../utils/request'
 
 const loading = ref(false)
 const applications = ref([])
 const filterStatus = ref('')
 
-// 审批相关
 const reviewDialogVisible = ref(false)
 const reviewLoading = ref(false)
 const reviewAction = ref('')
@@ -147,17 +144,29 @@ function formatTime(timeStr) {
 
 <style lang="scss" scoped>
 .applications-view {
-  padding: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
 
-  .card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+.page-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  padding: 24px 28px;
+}
 
-    h2 {
-      font-size: 20px;
-      margin: 0;
-    }
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+    letter-spacing: -0.3px;
   }
 }
 </style>

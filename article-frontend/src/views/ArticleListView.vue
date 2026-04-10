@@ -1,10 +1,13 @@
 <template>
   <div class="article-list-view">
     <div class="list-header">
-      <h2>文章列表</h2>
+      <div>
+        <h2>文章</h2>
+        <p class="subtitle" v-if="keyword">搜索：{{ keyword }}</p>
+      </div>
       <div class="header-actions">
         <el-button v-if="userStore.isLoggedIn" type="primary" @click="$router.push('/article/create')">
-          <el-icon><EditPen /></el-icon> 新建文章
+          <el-icon><EditPen /></el-icon> 写文章
         </el-button>
       </div>
     </div>
@@ -33,6 +36,8 @@
       }"
     />
 
+    <el-empty v-if="!loading && articles.length === 0" description="暂无文章" />
+
     <!-- 分页 -->
     <div class="pagination-wrapper" v-if="total > pageSize">
       <el-pagination
@@ -44,8 +49,6 @@
         @current-change="(p) => { page = p; fetchArticles() }"
       />
     </div>
-
-    <el-empty v-if="!loading && articles.length === 0" description="暂无文章数据" />
   </div>
 </template>
 
@@ -74,7 +77,6 @@ onMounted(async () => {
   fetchArticles()
 })
 
-// 监听路由 query 变化（Header 搜索框跳转触发）
 watch(() => route.query.keyword, (val) => {
   keyword.value = val || ''
   page.value = 1
@@ -99,19 +101,32 @@ function fetchArticles() {
   .list-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
+    align-items: flex-start;
+    margin-bottom: 20px;
 
-    h2 { font-size: 22px; margin: 0; }
+    h2 {
+      font-size: 24px;
+      font-weight: 700;
+      color: #1a1a2e;
+      margin: 0;
+      letter-spacing: -0.3px;
+    }
 
-    .header-actions {
-      display: flex;
-      gap: 12px;
-      align-items: center;
+    .subtitle {
+      font-size: 14px;
+      color: #8e8ea0;
+      margin-top: 4px;
     }
   }
 
-  .category-tabs { margin-bottom: 20px; }
-  .pagination-wrapper { display: flex; justify-content: center; padding: 30px 0; }
+  .category-tabs {
+    margin-bottom: 20px;
+  }
+
+  .pagination-wrapper {
+    display: flex;
+    justify-content: center;
+    padding: 30px 0;
+  }
 }
 </style>

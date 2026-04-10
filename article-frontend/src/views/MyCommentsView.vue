@@ -1,14 +1,14 @@
 <template>
   <div class="my-comments-view">
-    <el-page-header @back="$router.push('/')" title="返回首页">
-      <template #content><span class="page-title">我的评论</span></template>
-    </el-page-header>
+    <div class="page-header">
+      <h2>我的评论</h2>
+    </div>
 
     <div class="content-area" v-loading="loading">
       <div v-if="list.length > 0" class="comment-list">
-        <el-card v-for="item in list" :key="item.id" class="comment-card" shadow="never">
+        <div v-for="item in list" :key="item.id" class="comment-card">
           <div class="comment-header">
-            <el-avatar :size="32">{{ (item.user?.nickname || item.user?.username || '?').charAt(0) }}</el-avatar>
+            <el-avatar :size="28">{{ (item.user?.nickname || item.user?.username || '?').charAt(0) }}</el-avatar>
             <span class="commenter-name">{{ item.user?.nickname || item.user?.username || '未知用户' }}</span>
           </div>
           <p class="comment-content">{{ item.content }}</p>
@@ -17,7 +17,7 @@
             <span class="comment-time">{{ formatTime(item.createdAt) }}</span>
             <el-button type="danger" text size="small" @click="handleDelete(item)">删除</el-button>
           </div>
-        </el-card>
+        </div>
 
         <div class="pagination-wrapper" v-if="total > pageSize">
           <el-pagination
@@ -30,7 +30,7 @@
         </div>
       </div>
 
-      <el-empty v-else description="还没有发表过任何评论，快去互动吧！">
+      <el-empty v-else description="还没有发表过评论">
         <el-button type="primary" @click="$router.push('/articles')">浏览文章</el-button>
       </el-empty>
     </div>
@@ -65,7 +65,7 @@ async function fetchData() {
 
 async function handleDelete(item) {
   try {
-    await ElMessageBox.confirm('确定删除这条评论吗？删除后不可恢复。', '提示', {
+    await ElMessageBox.confirm('确定删除这条评论吗？', '提示', {
       confirmButtonText: '确定删除',
       cancelButtonText: '取消',
       type: 'warning',
@@ -88,29 +88,35 @@ function formatTime(timeStr) {
 .my-comments-view {
   max-width: 800px;
   margin: 0 auto;
-  padding: 20px;
 }
 
-.page-title {
-  font-size: 18px;
-  font-weight: bold;
+.page-header {
+  margin-bottom: 20px;
+
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+    letter-spacing: -0.3px;
+  }
 }
 
 .content-area {
-  margin-top: 20px;
   min-height: 300px;
 }
 
 .comment-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .comment-card {
-  :deep(.el-card__body) {
-    padding: 16px 20px;
-  }
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  padding: 16px 20px;
 }
 
 .comment-header {
@@ -122,15 +128,15 @@ function formatTime(timeStr) {
   .commenter-name {
     font-weight: 500;
     font-size: 14px;
-    color: #409eff;
+    color: #2d6a4f;
   }
 }
 
 .comment-content {
-  margin: 8px 0 12px;
+  margin: 0 0 12px;
   line-height: 1.6;
   font-size: 14px;
-  color: #303133;
+  color: #1a1a2e;
 }
 
 .comment-footer {
@@ -138,21 +144,16 @@ function formatTime(timeStr) {
   align-items: center;
   gap: 12px;
   font-size: 13px;
-  color: #909399;
-  border-top: 1px solid #f2f3f5;
+  color: #8e8ea0;
+  border-top: 1px solid rgba(0, 0, 0, 0.04);
   padding-top: 10px;
 
-  .article-link {
-    a {
-      color: #409eff;
-
-      &:hover { text-decoration: underline; }
-    }
+  .article-link a {
+    color: #2d6a4f;
+    &:hover { text-decoration: underline; }
   }
 
-  .comment-time {
-    color: #c0c4cc;
-  }
+  .comment-time { color: #b8b8c8; }
 }
 
 .pagination-wrapper {

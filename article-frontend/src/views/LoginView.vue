@@ -1,13 +1,12 @@
 <template>
   <div class="login-view">
-    <el-card class="login-card" shadow="always">
-      <template #header>
-        <div class="card-header">
-          <h2>用户登录</h2>
-        </div>
-      </template>
+    <div class="auth-card">
+      <div class="auth-header">
+        <h2>欢迎回来</h2>
+        <p>登录你的账号继续</p>
+      </div>
 
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="0">
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="0" class="auth-form">
         <el-form-item prop="username">
           <el-input v-model="form.username" placeholder="用户名" :prefix-icon="User" size="large" />
         </el-form-item>
@@ -15,15 +14,17 @@
           <el-input v-model="form.password" type="password" placeholder="密码" :prefix-icon="Lock" size="large" show-password />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" size="large" style="width: 100%;" @click="handleLogin" :loading="loading">
-            登 录
-          </el-button>
+          <button type="button" class="submit-btn" :disabled="loading" @click="handleLogin">
+            <span v-if="loading" class="btn-loading"></span>
+            <span v-else>登 录</span>
+          </button>
         </el-form-item>
-        <div class="login-footer">
-          还没有账号？<router-link to="/register">立即注册</router-link>
-        </div>
       </el-form>
-    </el-card>
+
+      <div class="auth-footer">
+        还没有账号？<router-link to="/register">立即注册</router-link>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -59,12 +60,9 @@ async function handleLogin() {
   try {
     await userStore.login(form.username, form.password)
     ElMessage.success('登录成功！')
-
-    // 如果有来源重定向，跳转回去；否则回首页
     const redirect = router.currentRoute.value.query.redirect || '/'
     router.push(redirect)
   } catch (err) {
-    // 错误已在 axios 拦截器中通过 ElMessage 展示
     console.error('登录失败:', err.message)
   } finally {
     loading.value = false
@@ -76,31 +74,99 @@ async function handleLogin() {
 .login-view {
   display: flex;
   justify-content: center;
-  padding-top: 60px;
+  align-items: center;
+  min-height: calc(100vh - 140px);
+  padding: 40px 0;
+  background:
+    radial-gradient(ellipse at 30% 50%, rgba(45, 106, 79, 0.04) 0%, transparent 60%),
+    radial-gradient(ellipse at 70% 80%, rgba(45, 106, 79, 0.03) 0%, transparent 50%);
+}
 
-  .login-card {
-    width: 420px;
-    max-width: 100%;
+.auth-card {
+  width: 400px;
+  max-width: 100%;
+  background: #fff;
+  border-radius: 14px;
+  padding: 40px 36px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+}
 
-    .card-header h2 {
-      text-align: center;
-      font-size: 22px;
-      margin: 0;
-    }
+.auth-header {
+  margin-bottom: 32px;
+
+  h2 {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin-bottom: 6px;
+    letter-spacing: -0.3px;
   }
 
-  .login-footer {
-    text-align: center;
-    color: #909399;
+  p {
     font-size: 14px;
+    color: #8e8ea0;
+  }
+}
 
-    a {
-      color: #409eff;
-      text-decoration: none;
+.auth-form {
+  :deep(.el-input__wrapper) {
+    border-radius: 8px;
+    padding: 4px 12px;
+  }
+}
 
-      &:hover {
-        text-decoration: underline;
-      }
+.submit-btn {
+  width: 100%;
+  height: 42px;
+  border: none;
+  border-radius: 8px;
+  background: #2d6a4f;
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: #40916c;
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+  }
+}
+
+.btn-loading {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.auth-footer {
+  text-align: center;
+  color: #8e8ea0;
+  font-size: 14px;
+  margin-top: 20px;
+
+  a {
+    color: #2d6a4f;
+    font-weight: 500;
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
     }
   }
 }

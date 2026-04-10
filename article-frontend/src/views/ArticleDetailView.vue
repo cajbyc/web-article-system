@@ -1,64 +1,67 @@
 <template>
   <div class="article-detail-view" v-if="article">
-    <el-page-header @back="$router.push('/articles')" title="返回列表">
-      <template #content>
-        <span class="page-title">{{ article.title }}</span>
-        <el-tag v-if="article.status !== 'published'" :type="statusType(article.status)" size="small" style="margin-left: 8px;">
-          {{ statusLabel(article.status) }}
-        </el-tag>
-      </template>
-    </el-page-header>
+    <!-- 返回导航 -->
+    <button class="back-btn" @click="$router.push('/articles')">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      返回列表
+    </button>
 
-    <div class="article-meta">
-      <el-avatar :size="32">{{ (article.authorName || article.author || '?').charAt(0) }}</el-avatar>
-      <span class="author">{{ article.authorName || article.author }}</span>
-      <el-divider direction="vertical" />
-      <el-tag size="small" type="info">{{ article.categoryName || '未分类' }}</el-tag>
-      <el-divider direction="vertical" />
-      <span class="date"><el-icon><Clock /></el-icon> {{ formatTime(article.createdAt) }}</span>
-      <el-divider direction="vertical" />
-      <span class="views"><el-icon><View /></el-icon> {{ article.viewCount }} 次阅读</span>
+    <!-- 文章标题区 -->
+    <div class="article-header">
+      <h1 class="article-title">{{ article.title }}</h1>
+      <el-tag v-if="article.status !== 'published'" :type="statusType(article.status)" size="small" style="margin-left: 8px; vertical-align: middle;">
+        {{ statusLabel(article.status) }}
+      </el-tag>
+      <div class="article-meta">
+        <div class="meta-author">
+          <el-avatar :size="28">{{ (article.authorName || article.author || '?').charAt(0) }}</el-avatar>
+          <span class="author-name">{{ article.authorName || article.author }}</span>
+        </div>
+        <span class="meta-divider">·</span>
+        <el-tag size="small" class="cat-tag">{{ article.categoryName || '未分类' }}</el-tag>
+        <span class="meta-divider">·</span>
+        <span class="meta-text">{{ formatTime(article.createdAt) }}</span>
+        <span class="meta-divider">·</span>
+        <span class="meta-text">{{ article.viewCount }} 阅读</span>
+      </div>
     </div>
 
     <!-- 封面图 -->
     <img v-if="article.cover" :src="article.cover" class="cover-image" alt="" />
 
-    <el-divider />
-
+    <!-- 文章正文 -->
     <article class="article-content" v-html="formatContent(article.content)"></article>
 
-    <!-- 点赞 / 收藏 操作栏 -->
+    <!-- 互动操作栏 -->
     <div class="interaction-bar">
-      <div class="action-btns">
-        <!-- 点赞 -->
-        <div
-          class="action-item"
-          :class="{ active: isLiked }"
-          @click="handleToggleLike"
-        >
-          <el-icon :size="20">{{ isLiked ? '❤️' : '🤍' }}</el-icon>
-          <span>{{ isLiked ? '已赞' : '点赞' }}</span>
-          <span class="count">{{ likeCount }}</span>
-        </div>
+      <button
+        class="action-btn"
+        :class="{ liked: isLiked }"
+        @click="handleToggleLike"
+      >
+        <span class="action-icon">{{ isLiked ? '❤️' : '🤍' }}</span>
+        <span class="action-text">{{ isLiked ? '已赞' : '点赞' }}</span>
+        <span class="action-count" v-if="likeCount">{{ likeCount }}</span>
+      </button>
 
-        <!-- 收藏 -->
-        <div
-          class="action-item"
-          :class="{ active: isCollected }"
-          @click="handleToggleCollect"
-        >
-          <el-icon :size="20"><StarFilled v-if="isCollected" /><Star v-else /></el-icon>
-          <span>{{ isCollected ? '已收藏' : '收藏' }}</span>
-          <span class="count">{{ collectCount }}</span>
-        </div>
-      </div>
+      <button
+        class="action-btn"
+        :class="{ collected: isCollected }"
+        @click="handleToggleCollect"
+      >
+        <span class="action-icon">{{ isCollected ? '⭐' : '☆' }}</span>
+        <span class="action-text">{{ isCollected ? '已收藏' : '收藏' }}</span>
+        <span class="action-count" v-if="collectCount">{{ collectCount }}</span>
+      </button>
     </div>
 
-    <!-- 评论区域 -->
+    <!-- 评论区 -->
     <div id="comments" class="comments-section">
-      <h3 class="section-title">评论（{{ commentTotal }}）</h3>
+      <div class="comments-header">
+        <h3>评论 <span class="comment-count">{{ commentTotal }}</span></h3>
+      </div>
 
-      <!-- 评论输入框 -->
+      <!-- 评论输入 -->
       <div class="comment-input-area" v-if="userStore.isLoggedIn">
         <el-input
           v-model="commentText"
@@ -69,28 +72,28 @@
           show-word-limit
         />
         <div class="input-actions">
-          <el-button type="primary" :loading="submitting" :disabled="!commentText.trim()" @click="handleSubmitComment">
+          <el-button type="primary" :loading="submitting" :disabled="!commentText.trim()" @click="handleSubmitComment" size="default">
             发表评论
           </el-button>
         </div>
       </div>
       <div v-else class="login-prompt">
-        <p>登录后即可参与评论</p>
+        <span>登录后即可参与评论</span>
         <el-button type="primary" size="small" @click="$router.push(`/login?redirect=${$route.fullPath}`)">去登录</el-button>
       </div>
 
       <!-- 评论列表 -->
       <div class="comment-list" v-loading="commentLoading">
         <div v-if="commentList.length === 0 && !commentLoading" class="no-comment">
-          <el-empty description="暂无评论，快来抢沙发吧！" :image-size="80" />
+          <el-empty description="暂无评论，来抢沙发吧" :image-size="60" />
         </div>
         <div v-for="comment in commentList" :key="comment.id" class="comment-item">
           <div class="comment-header">
-            <el-avatar :size="36" :src="comment.user?.avatar">
+            <el-avatar :size="32" :src="comment.user?.avatar">
               {{ (comment.user?.nickname || comment.user?.username || '?').charAt(0) }}
             </el-avatar>
             <div class="user-info">
-              <span class="nickname">{{ comment.user?.nickname || comment.user?.username || '匿名用户' }}</span>
+              <span class="nickname">{{ comment.user?.nickname || comment.user?.username || '匿名' }}</span>
               <span class="time">{{ formatTime(comment.createdAt) }}</span>
             </div>
             <el-button
@@ -104,7 +107,6 @@
           <p class="comment-body">{{ comment.content }}</p>
         </div>
 
-        <!-- 分页 -->
         <div class="comment-pagination" v-if="commentTotal > commentPageSize">
           <el-pagination
             v-model:current-page="commentPage"
@@ -129,9 +131,6 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import {
-  Clock, View, StarFilled, Star,
-} from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 import { getArticleDetail } from '../api/article'
@@ -148,13 +147,11 @@ const route = useRoute()
 const userStore = useUserStore()
 const article = ref(null)
 
-// ====== 点赞/收藏状态 ======
 const isLiked = ref(false)
 const isCollected = ref(false)
 const likeCount = ref(0)
 const collectCount = ref(0)
 
-// ====== 评论 ======
 const commentList = ref([])
 const commentTotal = ref(0)
 const commentPage = ref(1)
@@ -181,7 +178,6 @@ async function fetchArticleDetail() {
   }
 }
 
-// ---- 点赞操作 ----
 async function handleToggleLike() {
   if (!userStore.isLoggedIn) {
     ElMessage.warning('请先登录后再点赞')
@@ -197,7 +193,6 @@ async function handleToggleLike() {
   }
 }
 
-// ---- 收藏操作 ----
 async function handleToggleCollect() {
   if (!userStore.isLoggedIn) {
     ElMessage.warning('请先登录后再收藏')
@@ -213,7 +208,6 @@ async function handleToggleCollect() {
   }
 }
 
-// ---- 获取评论列表 ----
 async function fetchComments() {
   commentLoading.value = true
   try {
@@ -231,10 +225,8 @@ async function fetchComments() {
   }
 }
 
-// ---- 发表评论 ----
 async function handleSubmitComment() {
   if (!commentText.value.trim()) return
-
   submitting.value = true
   try {
     await apiCreateComment({
@@ -243,7 +235,6 @@ async function handleSubmitComment() {
     })
     ElMessage.success('评论成功')
     commentText.value = ''
-    // 回到第一页查看最新评论
     commentPage.value = 1
     fetchComments()
   } catch (err) {
@@ -253,7 +244,6 @@ async function handleSubmitComment() {
   }
 }
 
-// ---- 删除评论 ----
 function canDelete(comment) {
   if (!userStore.isLoggedIn) return false
   if (userStore.userInfo.role === 'admin') return true
@@ -297,92 +287,174 @@ function statusLabel(status) {
 </script>
 
 <style lang="scss" scoped>
-.article-detail-view .page-title {
-  font-size: 18px;
-  font-weight: bold;
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #8e8ea0;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-bottom: 16px;
+  transition: color 0.2s;
+
+  &:hover { color: #2d6a4f; }
+}
+
+// ===== 文章标题区 =====
+.article-header {
+  margin-bottom: 24px;
+}
+
+.article-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1a1a2e;
+  line-height: 1.3;
+  letter-spacing: -0.5px;
+  margin-bottom: 12px;
 }
 
 .article-meta {
   display: flex;
   align-items: center;
-  margin-top: 16px;
-  color: #909399;
-  font-size: 14px;
-
-  .author { margin-left: 8px; color: #409eff; }
-  .date, .views { display: flex; align-items: center; gap: 4px; }
+  color: #8e8ea0;
+  font-size: 13px;
+  flex-wrap: wrap;
+  gap: 0;
 }
 
+.meta-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  .author-name {
+    color: #2d6a4f;
+    font-weight: 500;
+  }
+}
+
+.meta-divider {
+  margin: 0 10px;
+  color: #d0d0d8;
+}
+
+.meta-text {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.cat-tag {
+  background: rgba(45, 106, 79, 0.06);
+  border-color: rgba(45, 106, 79, 0.12);
+  color: #2d6a4f;
+}
+
+// ===== 封面图 =====
 .cover-image {
   width: 100%;
   max-height: 400px;
   object-fit: cover;
-  border-radius: 8px;
-  margin-top: 16px;
+  border-radius: 10px;
+  margin-bottom: 24px;
 }
 
+// ===== 正文 =====
 .article-content {
-  line-height: 1.8;
+  line-height: 1.9;
   font-size: 15px;
-  padding: 20px 0;
+  color: #1a1a2e;
+  padding: 24px 0;
+  max-width: 720px;
 }
 
-// ====== 互动操作栏 ======
+// ===== 互动栏 =====
 .interaction-bar {
-  padding: 20px 0;
-  border-top: 1px solid #ebeef5;
-  border-bottom: 1px solid #ebeef5;
-  margin-top: 24px;
+  padding: 16px 0;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
 }
 
-.action-btns {
-  display: flex;
-  gap: 32px;
-}
-
-.action-item {
-  display: flex;
+.action-btn {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  background: #fff;
   cursor: pointer;
-  color: #909399;
   font-size: 14px;
+  color: #4a4a68;
   transition: all 0.2s;
 
-  &:hover { color: #f56c6c; }
-
-  &.active {
-    color: #f56c6c;
-
-    .count { font-weight: 600; }
+  &:hover {
+    border-color: rgba(45, 106, 79, 0.2);
+    background: rgba(45, 106, 79, 0.03);
   }
 
-  .count {
+  &.liked {
+    color: #e74c3c;
+    border-color: rgba(231, 76, 60, 0.15);
+    background: rgba(231, 76, 60, 0.04);
+  }
+
+  &.collected {
+    color: #f59e0b;
+    border-color: rgba(245, 158, 11, 0.15);
+    background: rgba(245, 158, 11, 0.04);
+  }
+
+  .action-icon {
+    font-size: 16px;
+  }
+
+  .action-count {
     font-size: 13px;
+    font-weight: 600;
     margin-left: 2px;
   }
 }
 
-// ====== 评论区域 ======
+// ===== 评论区 =====
 .comments-section {
-  margin-top: 32px;
+  margin-top: 40px;
 }
 
-.section-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: #303133;
+.comments-header {
   margin-bottom: 20px;
-  padding-bottom: 12px;
-  border-bottom: 2px solid #409eff;
-  display: inline-block;
+
+  h3 {
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a1a2e;
+  }
+
+  .comment-count {
+    font-size: 14px;
+    color: #8e8ea0;
+    font-weight: 400;
+  }
 }
 
 .comment-input-area {
-  background: #fafafa;
-  border-radius: 8px;
+  background: rgba(45, 106, 79, 0.02);
+  border: 1px solid rgba(45, 106, 79, 0.08);
+  border-radius: 10px;
   padding: 16px;
   margin-bottom: 24px;
+
+  :deep(.el-textarea__inner) {
+    border-radius: 8px;
+    background: #fff;
+  }
 
   .input-actions {
     display: flex;
@@ -394,13 +466,13 @@ function statusLabel(status) {
 .login-prompt {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  background: #fafbfc;
-  border-radius: 8px;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: rgba(45, 106, 79, 0.02);
+  border-radius: 10px;
   margin-bottom: 24px;
   font-size: 14px;
-  color: #909399;
+  color: #8e8ea0;
 }
 
 .comment-list {
@@ -409,7 +481,7 @@ function statusLabel(status) {
 
 .comment-item {
   padding: 16px 0;
-  border-bottom: 1px solid #f5f5f5;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
 
   &:last-child { border-bottom: none; }
 }
@@ -427,22 +499,22 @@ function statusLabel(status) {
     .nickname {
       font-size: 14px;
       font-weight: 500;
-      color: #409eff;
+      color: #2d6a4f;
     }
 
     .time {
       font-size: 12px;
-      color: #c0c4cc;
+      color: #b8b8c8;
       margin-top: 2px;
     }
   }
 }
 
 .comment-body {
-  margin: 8px 0 0 46px;
+  margin: 8px 0 0 42px;
   line-height: 1.7;
   font-size: 14px;
-  color: #303133;
+  color: #1a1a2e;
 }
 
 .no-comment {

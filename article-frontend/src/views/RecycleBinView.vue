@@ -1,11 +1,11 @@
 <template>
   <div class="recycle-bin-view">
-    <el-card shadow="never">
-      <template #header>
-        <h2><el-icon><Delete /></el-icon> 回收站</h2>
-      </template>
+    <div class="page-card">
+      <div class="page-header">
+        <h2>回收站</h2>
+      </div>
 
-      <el-alert title="回收站中的文章将在 30 天后自动清除" type="warning" show-icon :closable="false" style="margin-bottom: 16px;" />
+      <el-alert title="回收站中的文章将在 30 天后自动清除" type="warning" show-icon :closable="false" style="margin-bottom: 16px; border-radius: 8px;" />
 
       <el-table :data="list" v-loading="loading" stripe>
         <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
@@ -43,13 +43,12 @@
           @current-change="(p) => { page = p; fetchData() }"
         />
       </div>
-    </el-card>
+    </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Delete } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getRecycleBin, restoreArticle, permanentDelete } from '../api/article'
 
@@ -98,12 +97,28 @@ function formatTime(timeStr) {
 </script>
 
 <style lang="scss" scoped>
-.recycle-bin-view h2 {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 20px;
-  margin: 0;
+.recycle-bin-view {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.page-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  padding: 24px 28px;
+}
+
+.page-header {
+  margin-bottom: 20px;
+
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+    letter-spacing: -0.3px;
+  }
 }
 
 .pagination-wrapper {

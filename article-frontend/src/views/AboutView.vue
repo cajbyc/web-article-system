@@ -1,71 +1,79 @@
 <template>
   <div class="about-view">
-    <el-card shadow="never">
-      <template #header>
-        <h2>使用说明</h2>
-      </template>
+    <div class="about-card">
+      <div class="about-hero">
+        <h1>使用说明</h1>
+        <p>快速了解系统的功能与角色</p>
+      </div>
 
-      <h3>快速开始</h3>
-      <el-steps :active="4" finish-status="success" simple style="margin-top: 12px;">
-        <el-step title="注册账号" />
-        <el-step title="登录系统" />
-        <el-step title="浏览文章" />
-        <el-step title="互动交流" />
-      </el-steps>
-
-      <el-divider />
-
-      <h3>角色使用指南</h3>
-      <el-table :data="roleData" border stripe style="margin-top: 12px;">
-        <el-table-column prop="role" label="角色" width="120" />
-        <el-table-column prop="desc" label="说明" width="140" />
-        <el-table-column prop="guide" label="操作指南" />
-      </el-table>
-
-      <el-divider />
-
-      <h3>常用功能说明</h3>
-      <el-row :gutter="16" style="margin-top: 12px;">
-        <el-col :span="8" :xs="12" v-for="mod in modules" :key="mod.name">
-          <div class="module-card">
-            <span class="mod-icon">{{ mod.icon }}</span>
-            <span class="mod-name">{{ mod.name }}</span>
-            <span class="mod-desc">{{ mod.desc }}</span>
+      <!-- 快速开始 -->
+      <section class="about-section">
+        <h3>快速开始</h3>
+        <div class="steps-row">
+          <div class="step-item" v-for="(step, i) in 4" :key="i">
+            <div class="step-num">{{ i + 1 }}</div>
+            <span class="step-text">{{ ['注册账号', '登录系统', '浏览文章', '互动交流'][i] }}</span>
+            <svg v-if="i < 3" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#d4d4dc" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
           </div>
-        </el-col>
-      </el-row>
+        </div>
+      </section>
 
-      <el-divider />
+      <!-- 角色指南 -->
+      <section class="about-section">
+        <h3>角色使用指南</h3>
+        <div class="role-cards">
+          <div class="role-card" v-for="role in roleData" :key="role.role">
+            <span class="role-name">{{ role.role }}</span>
+            <span class="role-desc">{{ role.desc }}</span>
+            <p class="role-guide">{{ role.guide }}</p>
+          </div>
+        </div>
+      </section>
 
-      <h3>常见问题</h3>
-      <el-collapse style="margin-top: 12px;">
-        <el-collapse-item title="如何注册账号？" name="1">
-          点击导航栏「注册」，填写用户名、邮箱和密码即可完成注册。注册成功后自动跳转到登录页面。
-        </el-collapse-item>
-        <el-collapse-item title="如何发布文章？" name="2">
-          只有编辑/作者角色的用户可以发布文章。登录后点击导航栏「写文章」，填写标题、内容、分类等信息，支持上传封面图片，点击发布即可。
-        </el-collapse-item>
-        <el-collapse-item title="如何点赞、收藏和评论？" name="3">
-          登录后，在文章详情页可以点击点赞按钮、收藏按钮，也可以在底部评论区发表评论。
-        </el-collapse-item>
-        <el-collapse-item title="如何搜索文章？" name="4">
-          使用顶部导航栏的搜索框，输入关键词后按回车，即可搜索文章标题和分类。
-        </el-collapse-item>
-        <el-collapse-item title="如何管理自己的文章？" name="5">
-          编辑/作者角色登录后，点击「我的文章」查看所有已发布文章，可进行编辑、删除、状态切换等操作。删除的文章会进入回收站，可恢复。
-        </el-collapse-item>
-        <el-collapse-item title="管理员能做什么？" name="6">
-          管理员登录后可进入「管理面板」，进行用户管理（禁用/启用）、文章审核、评论管理、查看数据统计和操作日志等。
-        </el-collapse-item>
-        <el-collapse-item title="忘记密码怎么办？" name="7">
-          目前请联系管理员重置密码，或在登录页面尝试重新注册新账号。
-        </el-collapse-item>
-      </el-collapse>
+      <!-- 功能模块 -->
+      <section class="about-section">
+        <h3>功能模块</h3>
+        <div class="module-grid">
+          <div class="module-item" v-for="mod in modules" :key="mod.name">
+            <span class="mod-icon">{{ mod.icon }}</span>
+            <div>
+              <span class="mod-name">{{ mod.name }}</span>
+              <span class="mod-desc">{{ mod.desc }}</span>
+            </div>
+          </div>
+        </div>
+      </section>
 
-      <el-divider />
+      <!-- FAQ -->
+      <section class="about-section">
+        <h3>常见问题</h3>
+        <el-collapse class="faq-list">
+          <el-collapse-item title="如何注册账号？" name="1">
+            点击导航栏「注册」，填写用户名、邮箱和密码即可完成注册。注册成功后自动跳转到登录页面。
+          </el-collapse-item>
+          <el-collapse-item title="如何发布文章？" name="2">
+            只有编辑/作者角色的用户可以发布文章。登录后点击导航栏「写文章」，填写标题、内容、分类等信息，支持上传封面图片，点击发布即可。
+          </el-collapse-item>
+          <el-collapse-item title="如何点赞、收藏和评论？" name="3">
+            登录后，在文章详情页可以点击点赞按钮、收藏按钮，也可以在底部评论区发表评论。
+          </el-collapse-item>
+          <el-collapse-item title="如何搜索文章？" name="4">
+            使用顶部导航栏的搜索框，输入关键词后按回车，即可搜索文章标题和内容。
+          </el-collapse-item>
+          <el-collapse-item title="如何管理自己的文章？" name="5">
+            编辑/作者角色登录后，点击「我的文章」查看所有已发布文章，可进行编辑、删除、状态切换等操作。删除的文章会进入回收站，可恢复。
+          </el-collapse-item>
+          <el-collapse-item title="管理员能做什么？" name="6">
+            管理员登录后可进入「管理面板」，进行用户管理（禁用/启用）、文章审核、评论管理、查看数据统计和操作日志等。
+          </el-collapse-item>
+          <el-collapse-item title="忘记密码怎么办？" name="7">
+            目前请联系管理员重置密码，或在登录页面尝试重新注册新账号。
+          </el-collapse-item>
+        </el-collapse>
+      </section>
 
-      <p class="footer-note">&copy;2026 文章管理系统 · 毕业设计专用 · 基于 Vercel 部署</p>
-    </el-card>
+      <div class="about-footer">&copy; 2026 墨笔文章系统</div>
+    </div>
   </div>
 </template>
 
@@ -91,28 +99,183 @@ const modules = [
 .about-view {
   max-width: 900px;
   margin: 0 auto;
-
-  h2 { margin: 0; font-size: 22px; }
-  h3 { font-size: 18px; color: #303133; }
 }
 
-.module-card {
-  background: #f5f7fa;
-  border-radius: 8px;
-  padding: 16px;
-  margin-bottom: 12px;
+.about-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.about-hero {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d4a3e 100%);
+  padding: 32px 28px;
+  color: #fff;
+
+  h1 {
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
+  }
+
+  p {
+    font-size: 14px;
+    opacity: 0.6;
+  }
+}
+
+.about-section {
+  padding: 24px 28px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+
+  &:last-of-type { border-bottom: none; }
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 16px;
+  }
+}
+
+// 步骤条
+.steps-row {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-
-  .mod-icon { font-size: 28px; }
-  .mod-name { font-size: 15px; font-weight: 600; color: #303133; }
-  .mod-desc { font-size: 13px; color: #909399; }
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
 }
 
-.footer-note {
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+
+  .step-num {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: #2d6a4f;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .step-text {
+    font-size: 14px;
+    color: #4a4a68;
+    font-weight: 500;
+  }
+}
+
+// 角色
+.role-cards {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.role-card {
+  background: rgba(45, 106, 79, 0.02);
+  border: 1px solid rgba(45, 106, 79, 0.06);
+  border-radius: 10px;
+  padding: 16px;
+
+  .role-name {
+    font-size: 15px;
+    font-weight: 600;
+    color: #2d6a4f;
+    margin-right: 8px;
+  }
+
+  .role-desc {
+    font-size: 12px;
+    color: #8e8ea0;
+  }
+
+  .role-guide {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #4a4a68;
+    line-height: 1.6;
+  }
+}
+
+// 模块
+.module-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+
+  @media (max-width: 640px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.module-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+
+  .mod-icon {
+    font-size: 24px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .mod-name {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 2px;
+  }
+
+  .mod-desc {
+    font-size: 12px;
+    color: #8e8ea0;
+    line-height: 1.5;
+  }
+}
+
+// FAQ
+.faq-list {
+  border: none;
+
+  :deep(.el-collapse-item__header) {
+    font-size: 14px;
+    font-weight: 500;
+    color: #4a4a68;
+    border-bottom-color: rgba(0, 0, 0, 0.04);
+  }
+
+  :deep(.el-collapse-item__content) {
+    font-size: 14px;
+    color: #4a4a68;
+    line-height: 1.7;
+    padding-bottom: 12px;
+  }
+}
+
+.about-footer {
   text-align: center;
-  color: #909399;
-  font-size: 13px;
+  padding: 16px;
+  color: #b8b8c8;
+  font-size: 12px;
 }
 </style>

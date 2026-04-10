@@ -1,26 +1,21 @@
 <template>
   <div class="editor-view">
-    <el-card shadow="never">
-      <template #header>
-        <div class="card-header">
-          <h2>{{ isEdit ? '编辑文章' : '发布新文章' }}</h2>
-        </div>
-      </template>
+    <div class="editor-card">
+      <div class="editor-header">
+        <h2>{{ isEdit ? '编辑文章' : '发布新文章' }}</h2>
+      </div>
 
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
-        <!-- 标题 -->
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px" class="editor-form">
         <el-form-item label="标题" prop="title">
           <el-input v-model="form.title" placeholder="请输入文章标题" maxlength="100" show-word-limit />
         </el-form-item>
 
-        <!-- 分类 -->
         <el-form-item label="分类" prop="categoryId">
           <el-select v-model="form.categoryId" placeholder="请选择分类" style="width: 300px;">
             <el-option v-for="cat in categories" :key="cat.id" :label="cat.name" :value="cat.id" />
           </el-select>
         </el-form-item>
 
-        <!-- 封面上传 -->
         <el-form-item label="封面">
           <div class="cover-upload">
             <el-upload
@@ -32,24 +27,25 @@
               accept="image/*"
             >
               <img v-if="form.cover" :src="form.cover" class="cover-preview" />
-              <el-icon v-else class="cover-uploader-icon"><Plus /></el-icon>
+              <div v-else class="cover-placeholder">
+                <el-icon :size="24"><Plus /></el-icon>
+                <span>上传封面</span>
+              </div>
             </el-upload>
-            <span class="tip">建议尺寸 1200x630，支持 jpg/png/gif/webp，最大 5MB</span>
+            <span class="tip">建议 1200x630，最大 5MB</span>
           </div>
         </el-form-item>
 
-        <!-- 内容编辑器（简化版 textarea，可后续替换为富文本）-->
         <el-form-item label="内容" prop="content">
           <el-input
             v-model="form.content"
             type="textarea"
             :rows="16"
-            placeholder="请输入文章内容（支持 Markdown 格式）..."
+            placeholder="请输入文章内容..."
             class="article-content"
           />
         </el-form-item>
 
-        <!-- 状态 -->
         <el-form-item label="状态">
           <el-radio-group v-model="form.status">
             <el-radio-button value="draft">草稿</el-radio-button>
@@ -58,14 +54,15 @@
           </el-radio-group>
         </el-form-item>
 
-        <!-- 操作按钮 -->
         <el-form-item>
-          <el-button @click="$router.back()">取消</el-button>
-          <el-button type="info" @click="handleSubmit('draft')" :loading="saving">保存草稿</el-button>
-          <el-button type="primary" @click="handleSubmit('published')" :loading="saving">发布</el-button>
+          <div class="form-actions">
+            <el-button @click="$router.back()">取消</el-button>
+            <el-button type="info" @click="handleSubmit('draft')" :loading="saving">保存草稿</el-button>
+            <el-button type="primary" @click="handleSubmit('published')" :loading="saving">发布</el-button>
+          </div>
         </el-form-item>
       </el-form>
-    </el-card>
+    </div>
   </div>
 </template>
 
@@ -85,7 +82,6 @@ const categories = ref([])
 const isEdit = computed(() => !!route.params.id)
 const articleId = computed(() => route.params.id)
 
-// 上传相关
 const uploadAction = computed(() => {
   const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
   return `${baseUrl.replace(/\/api\/?$/, '')}/api/upload/image`
@@ -112,7 +108,6 @@ onMounted(async () => {
   const res = await getCategories()
   categories.value = res.data
 
-  // 编辑模式：加载文章数据
   if (isEdit.value) {
     try {
       const detail = await getArticleDetail(articleId.value)
@@ -166,8 +161,32 @@ async function handleSubmit(statusOverride) {
 .editor-view {
   max-width: 900px;
   margin: 0 auto;
+}
 
-  .card-header h2 { font-size: 20px; margin: 0; }
+.editor-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  padding: 28px 32px;
+}
+
+.editor-header {
+  margin-bottom: 24px;
+
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+    letter-spacing: -0.3px;
+  }
+}
+
+.editor-form {
+  :deep(.el-input__wrapper),
+  :deep(.el-select .el-input__wrapper) {
+    border-radius: 8px;
+  }
 }
 
 .cover-upload {
@@ -178,42 +197,51 @@ async function handleSubmit(statusOverride) {
 
 .cover-uploader {
   :deep(.el-upload) {
-    border: 1px dashed #d9d9d9;
-    border-radius: 6px;
+    border: 1px dashed #d4d4dc;
+    border-radius: 10px;
     width: 200px;
-    height: 130px;
+    height: 120px;
     overflow: hidden;
+    transition: border-color 0.2s;
 
-    &:hover { border-color: #409eff; }
+    &:hover { border-color: #2d6a4f; }
   }
 }
 
 .cover-preview {
   width: 200px;
-  height: 130px;
+  height: 120px;
   object-fit: cover;
 }
 
-.cover-uploader-icon {
-  font-size: 28px;
-  color: #8c939d;
+.cover-placeholder {
   width: 200px;
-  height: 130px;
+  height: 120px;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 4px;
+  color: #b8b8c8;
+  font-size: 13px;
 }
 
 .tip {
   font-size: 12px;
-  color: #909399;
+  color: #8e8ea0;
 }
 
 .article-content {
   :deep(.el-textarea__inner) {
-    font-family: 'Monaco', 'Menlo', monospace;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
     line-height: 1.8;
     font-size: 14px;
+    border-radius: 8px;
   }
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
 }
 </style>

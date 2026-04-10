@@ -1,16 +1,13 @@
 <template>
   <div class="my-articles-view">
-    <el-card shadow="never">
-      <template #header>
-        <div class="card-header">
-          <h2>我的文章</h2>
-          <el-button type="primary" @click="$router.push('/article/create')">
-            <el-icon><EditPen /></el-icon> 新建文章
-          </el-button>
-        </div>
-      </template>
+    <div class="page-card">
+      <div class="page-header">
+        <h2>我的文章</h2>
+        <el-button type="primary" @click="$router.push('/article/create')">
+          <el-icon><EditPen /></el-icon> 写文章
+        </el-button>
+      </div>
 
-      <!-- 筛选 -->
       <div class="filter-bar">
         <el-select v-model="filterStatus" placeholder="全部状态" clearable style="width: 140px;" @change="fetchData">
           <el-option label="草稿" value="draft" />
@@ -19,7 +16,6 @@
         </el-select>
       </div>
 
-      <!-- 文章表格 -->
       <el-table :data="articles" v-loading="loading" stripe style="width: 100%;">
         <el-table-column prop="title" label="标题" min-width="200" show-overflow-tooltip />
         <el-table-column label="分类" width="120">
@@ -47,7 +43,6 @@
         </el-table-column>
       </el-table>
 
-      <!-- 分页 -->
       <div class="pagination-wrapper" v-if="total > pageSize">
         <el-pagination
           background
@@ -58,7 +53,7 @@
           @current-change="(p) => { page = p; fetchData() }"
         />
       </div>
-    </el-card>
+    </div>
   </div>
 </template>
 
@@ -117,12 +112,31 @@ function formatTime(timeStr) {
 </script>
 
 <style lang="scss" scoped>
-.my-articles-view .card-header {
+.my-articles-view {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.page-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  padding: 24px 28px;
+}
+
+.page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 20px;
 
-  h2 { font-size: 20px; margin: 0; }
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+    letter-spacing: -0.3px;
+  }
 }
 
 .filter-bar {

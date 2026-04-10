@@ -1,32 +1,53 @@
 <template>
   <div class="profile-view">
-    <el-card shadow="never">
-      <template #header>
-        <div class="card-header">
-          <h2><el-icon><UserFilled /></el-icon> 个人中心</h2>
+    <div class="profile-card">
+      <!-- 用户头像区 -->
+      <div class="profile-hero">
+        <el-avatar :size="64" class="profile-avatar">
+          {{ userStore.userInfo?.username?.charAt(0)?.toUpperCase() || 'U' }}
+        </el-avatar>
+        <div class="profile-brief">
+          <h2>{{ userStore.userInfo?.nickname || userStore.userInfo?.username }}</h2>
+          <div class="role-row">
+            <el-tag :type="roleTagType" size="small">{{ roleLabel }}</el-tag>
+            <el-tag v-if="hasPendingApplication" type="warning" size="small">审核中</el-tag>
+          </div>
         </div>
-      </template>
-
-      <el-descriptions :column="1" border>
-        <el-descriptions-item label="用户名">{{ userStore.userInfo?.username }}</el-descriptions-item>
-        <el-descriptions-item label="昵称">{{ userStore.userInfo?.nickname || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="邮箱">{{ userStore.userInfo?.email || '-' }}</el-descriptions-item>
-        <el-descriptions-item label="用户 ID">{{ userStore.userInfo?.id }}</el-descriptions-item>
-        <el-descriptions-item label="角色">
-          <el-tag :type="roleTagType">{{ roleLabel }}</el-tag>
-        </el-descriptions-item>
-        <el-descriptions-item label="注册时间">{{ formatTime(userStore.userInfo?.createdAt) }}</el-descriptions-item>
-      </el-descriptions>
-
-      <div class="action-bar" style="margin-top: 24px;">
-        <el-button type="primary" @click="showEditDialog"><el-icon><EditPen /></el-icon> 编辑资料</el-button>
-        <el-button type="warning" @click="showPasswordDialog"><el-icon><Key /></el-icon> 修改密码</el-button>
-        <el-button v-if="canApplyAuthor" type="success" @click="showApplyDialog"><el-icon><Promotion /></el-icon> 申请成为作者</el-button>
-        <el-tag v-if="hasPendingApplication" type="warning" size="large" style="margin-left: 8px;">
-          <el-icon><Clock /></el-icon> 角色申请审核中
-        </el-tag>
       </div>
-    </el-card>
+
+      <!-- 用户信息 -->
+      <div class="profile-info">
+        <div class="info-row">
+          <span class="info-label">用户名</span>
+          <span class="info-value">{{ userStore.userInfo?.username }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">邮箱</span>
+          <span class="info-value">{{ userStore.userInfo?.email || '-' }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">用户 ID</span>
+          <span class="info-value">{{ userStore.userInfo?.id }}</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">注册时间</span>
+          <span class="info-value">{{ formatTime(userStore.userInfo?.createdAt) }}</span>
+        </div>
+      </div>
+
+      <!-- 操作按钮 -->
+      <div class="action-bar">
+        <el-button @click="showEditDialog">
+          <el-icon><EditPen /></el-icon> 编辑资料
+        </el-button>
+        <el-button @click="showPasswordDialog">
+          <el-icon><Key /></el-icon> 修改密码
+        </el-button>
+        <el-button v-if="canApplyAuthor" type="primary" @click="showApplyDialog">
+          <el-icon><Promotion /></el-icon> 申请成为作者
+        </el-button>
+      </div>
+    </div>
 
     <!-- 编辑资料对话框 -->
     <el-dialog v-model="editDialogVisible" title="编辑资料" width="460px" destroy-on-close>
@@ -65,7 +86,7 @@
 
     <!-- 申请成为作者对话框 -->
     <el-dialog v-model="applyDialogVisible" title="申请成为作者" width="480px" destroy-on-close>
-      <p style="margin-top: 0; color: #909399;">成为作者后，你将可以发布和管理自己的文章。</p>
+      <p style="margin-top: 0; color: #8e8ea0;">成为作者后，你将可以发布和管理自己的文章。</p>
       <el-form label-width="80px">
         <el-form-item label="申请理由">
           <el-input
@@ -88,23 +109,20 @@
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { UserFilled, EditPen, Key, Promotion, Clock } from '@element-plus/icons-vue'
+import { EditPen, Key, Promotion } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../stores/user'
 import request from '../utils/request'
 
 const userStore = useUserStore()
 
-// 角色映射
 const ROLE_LABEL_MAP = Object.freeze({ admin: '管理员', editor: '编辑', author: '作者', user: '普通用户' })
 const ROLE_TAG_TYPE_MAP = Object.freeze({ admin: 'danger', editor: 'warning', author: '', user: 'info' })
 
-// 角色申请状态
 const myApplication = ref(null)
 
 onMounted(async () => {
   await userStore.fetchUserInfo()
-  // 普通用户才需要查询申请状态
   if (userStore.userInfo?.role === 'user') {
     fetchMyApplication()
   }
@@ -258,21 +276,75 @@ async function handleApplyAuthor() {
 
 <style lang="scss" scoped>
 .profile-view {
-  max-width: 700px;
+  max-width: 640px;
   margin: 0 auto;
-  padding: 20px;
+}
 
-  .card-header h2 {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+.profile-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  overflow: hidden;
+}
+
+.profile-hero {
+  background: linear-gradient(135deg, #1a1a2e 0%, #2d4a3e 100%);
+  padding: 32px 28px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.profile-avatar {
+  border: 3px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  font-size: 24px;
+  color: #fff;
+}
+
+.profile-brief {
+  h2 {
+    color: #fff;
     font-size: 20px;
-    margin: 0;
+    font-weight: 600;
+    margin-bottom: 6px;
   }
 
-  .action-bar {
+  .role-row {
     display: flex;
-    gap: 12px;
+    gap: 6px;
   }
+}
+
+.profile-info {
+  padding: 20px 28px;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
+
+  &:last-child { border-bottom: none; }
+
+  .info-label {
+    color: #8e8ea0;
+    font-size: 14px;
+  }
+
+  .info-value {
+    color: #1a1a2e;
+    font-size: 14px;
+    font-weight: 500;
+  }
+}
+
+.action-bar {
+  padding: 16px 28px 24px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 </style>

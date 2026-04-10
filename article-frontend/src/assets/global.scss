@@ -1,12 +1,33 @@
-// 全局样式变量
-$primary-color: #409eff;
-$text-color: #303133;
-$text-regular: #606266;
-$text-secondary: #909399;
-$bg-color: #f5f7fa;
-$border-color: #e4e7ed;
+// ============================================
+// 全局色彩体系 & 主题变量
+// ============================================
+$primary: #2d6a4f;
+$primary-light: #40916c;
+$primary-lighter: #74c69d;
+$primary-bg: rgba(45, 106, 79, 0.06);
+$primary-border: rgba(45, 106, 79, 0.2);
 
+$text-color: #1a1a2e;
+$text-regular: #4a4a68;
+$text-secondary: #8e8ea0;
+$text-placeholder: #b8b8c8;
+
+$bg-color: #f8f9fb;
+$bg-warm: #faf9f7;
+$border-color: #e8e8ee;
+$border-light: #f0f0f5;
+
+$shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+$shadow-md: 0 4px 16px rgba(0, 0, 0, 0.06);
+$shadow-lg: 0 8px 30px rgba(0, 0, 0, 0.08);
+
+$radius-sm: 6px;
+$radius-md: 10px;
+$radius-lg: 14px;
+
+// ============================================
 // 全局重置
+// ============================================
 * {
   margin: 0;
   padding: 0;
@@ -16,37 +37,107 @@ $border-color: #e4e7ed;
 html, body {
   height: 100%;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto,
-    'Helvetica Neue', Arial, 'Noto Sans SC', sans-serif;
+    'Helvetica Neue', Arial, 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   font-size: 14px;
   color: $text-color;
   background-color: $bg-color;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 a {
   text-decoration: none;
-  color: $primary-color;
+  color: $primary;
+  transition: color 0.2s;
+
+  &:hover {
+    color: $primary-light;
+  }
 }
 
+// ============================================
 // 滚动条美化
+// ============================================
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: #c0c4cc;
+  background: #c8c8d4;
   border-radius: 3px;
+
+  &:hover {
+    background: #a8a8b8;
+  }
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
 
-// Element Plus 覆盖样式
-.el-card {
-  border-radius: 8px !important;
+// ============================================
+// Element Plus 主题覆盖
+// ============================================
+:root {
+  --el-color-primary: #{$primary};
+  --el-color-primary-light-3: #{$primary-light};
+  --el-color-primary-light-5: #{$primary-lighter};
+  --el-color-primary-light-7: #b7e4c7;
+  --el-color-primary-light-9: #d8f3dc;
+  --el-color-primary-dark-2: #{$primary};
+  --el-border-radius-base: #{$radius-sm};
+  --el-font-family: inherit;
 }
 
+.el-card {
+  border-radius: $radius-md !important;
+  border: 1px solid $border-light !important;
+  box-shadow: $shadow-sm !important;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
+
+  &:hover {
+    box-shadow: $shadow-md !important;
+  }
+}
+
+.el-button--primary {
+  --el-button-bg-color: #{$primary};
+  --el-button-border-color: #{$primary};
+  --el-button-hover-bg-color: #{$primary-light};
+  --el-button-hover-border-color: #{$primary-light};
+  --el-button-active-bg-color: #{$primary};
+  --el-button-active-border-color: #{$primary};
+}
+
+.el-tag--info {
+  --el-tag-bg-color: #f4f4f8;
+  --el-tag-border-color: #e8e8ee;
+  --el-tag-text-color: #{$text-secondary};
+}
+
+.el-radio-button__inner:hover {
+  color: $primary !important;
+}
+
+.el-radio-button__original-radio:checked + .el-radio-button__inner {
+  background-color: $primary !important;
+  border-color: $primary !important;
+  box-shadow: -1px 0 0 0 $primary !important;
+}
+
+.el-pagination.is-background .el-pager li.is-active {
+  background-color: $primary !important;
+}
+
+.el-menu--horizontal > .el-menu-item.is-active {
+  border-bottom-color: $primary !important;
+  color: $primary !important;
+}
+
+// ============================================
 // 响应式容器辅助类
+// ============================================
 .container {
   width: 100%;
   max-width: 1200px;
@@ -57,4 +148,15 @@ a {
     max-width: 100%;
     padding: 0 16px;
   }
+}
+
+// ============================================
+// 通用工具类
+// ============================================
+.section-divider {
+  width: 40px;
+  height: 3px;
+  background: $primary;
+  border-radius: 2px;
+  margin: 8px 0 20px;
 }

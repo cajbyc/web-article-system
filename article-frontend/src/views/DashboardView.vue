@@ -1,60 +1,67 @@
 <template>
   <div class="dashboard-view">
-    <el-page-header @back="$router.push('/')" title="返回首页">
-      <template #content><span class="page-title">数据看板</span></template>
-    </el-page-header>
+    <button class="back-btn" @click="$router.push('/')">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+      返回首页
+    </button>
+
+    <h1 class="page-title">数据看板</h1>
 
     <div class="stats-grid" v-loading="loading">
-      <!-- 统计卡片 -->
-      <div class="stat-card" v-for="(stat, index) in stats" :key="index" :style="{ '--accent': stat.color }">
-        <div class="stat-icon"><el-icon :size="36"><component :is="stat.icon" /></el-icon></div>
+      <div class="stat-card" v-for="(stat, index) in stats" :key="index">
+        <div class="stat-icon" :style="{ background: stat.bgColor, color: stat.color }">
+          <el-icon :size="24"><component :is="stat.icon" /></el-icon>
+        </div>
         <div class="stat-info">
           <div class="stat-value">{{ stat.value }}</div>
           <div class="stat-label">{{ stat.label }}</div>
         </div>
       </div>
 
-      <!-- 分类文章统计 -->
-      <el-card class="category-chart" shadow="never">
-        <template #header><span>分类文章统计</span></template>
-        <div v-if="categoryData.length > 0" class="chart-body">
-          <div class="bar-list">
-            <div class="bar-item" v-for="cat in categoryData" :key="cat.name">
-              <span class="bar-label">{{ cat.name }}</span>
-              <div class="bar-track">
-                <div class="bar-fill" :style="{ width: getBarWidth(cat.count) + '%' }"></div>
-              </div>
-              <span class="bar-value">{{ cat.count }} 篇</span>
+      <!-- 分类统计 -->
+      <div class="chart-card">
+        <h3>分类文章统计</h3>
+        <div class="bar-list" v-if="categoryData.length > 0">
+          <div class="bar-item" v-for="cat in categoryData" :key="cat.name">
+            <span class="bar-label">{{ cat.name }}</span>
+            <div class="bar-track">
+              <div class="bar-fill" :style="{ width: getBarWidth(cat.count) + '%' }"></div>
             </div>
+            <span class="bar-value">{{ cat.count }} 篇</span>
           </div>
         </div>
-      </el-card>
+        <el-empty v-else description="暂无数据" :image-size="60" />
+      </div>
 
       <!-- 快捷操作 -->
-      <el-card class="quick-actions" shadow="never">
-        <template #header><span>快捷操作</span></template>
+      <div class="quick-card">
+        <h3>快捷操作</h3>
         <div class="action-buttons">
-          <el-button type="primary" @click="$router.push('/admin/users')">
-            <el-icon><User /></el-icon> 用户管理
-          </el-button>
-          <el-button type="success" @click="$router.push('/admin/articles')">
-            <el-icon><Document /></el-icon> 文章管理
-          </el-button>
-          <el-button type="warning" @click="$router.push('/admin/comments')">
-            <el-icon><ChatDotRound /></el-icon> 评论管理
-          </el-button>
-          <el-button type="info" @click="$router.push('/admin/logs')">
-            <el-icon><Tickets /></el-icon> 操作日志
-          </el-button>
+          <button class="quick-btn" @click="$router.push('/admin/users')">
+            <span class="qb-icon">👥</span>
+            <span>用户管理</span>
+          </button>
+          <button class="quick-btn" @click="$router.push('/admin/articles')">
+            <span class="qb-icon">📄</span>
+            <span>文章管理</span>
+          </button>
+          <button class="quick-btn" @click="$router.push('/admin/comments')">
+            <span class="qb-icon">💬</span>
+            <span>评论管理</span>
+          </button>
+          <button class="quick-btn" @click="$router.push('/admin/logs')">
+            <span class="qb-icon">📋</span>
+            <span>操作日志</span>
+          </button>
         </div>
-      </el-card>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-import { User, Document, ChatDotRound, Tickets, TrendCharts, Collection, ChatLineSquare, StarFilled } from '@element-plus/icons-vue'
+import { User, Document, ChatLineSquare, StarFilled, Collection } from '@element-plus/icons-vue'
 import { getDashboardStats } from '../api/admin'
 
 const loading = ref(false)
@@ -79,11 +86,11 @@ async function fetchStats() {
 const stats = computed(() => {
   if (!rawStats.value) return []
   return [
-    { label: '用户总数', value: rawStats.value.userCount || 0, icon: 'User', color: '#409eff' },
-    { label: '文章总数', value: rawStats.value.articleCount || 0, icon: 'Document', color: '#67c23a' },
-    { label: '评论总数', value: rawStats.value.commentCount || 0, icon: 'ChatLineSquare', color: '#e6a23c' },
-    { label: '点赞总数', value: rawStats.value.likeCount || 0, icon: 'StarFilled', color: '#f56c6c' },
-    { label: '收藏总数', value: rawStats.value.collectCount || 0, icon: 'Collection', color: '#909399' },
+    { label: '用户总数', value: rawStats.value.userCount || 0, icon: 'User', color: '#2d6a4f', bgColor: 'rgba(45,106,79,0.08)' },
+    { label: '文章总数', value: rawStats.value.articleCount || 0, icon: 'Document', color: '#1a6b54', bgColor: 'rgba(26,107,84,0.08)' },
+    { label: '评论总数', value: rawStats.value.commentCount || 0, icon: 'ChatLineSquare', color: '#b45309', bgColor: 'rgba(180,83,9,0.08)' },
+    { label: '点赞总数', value: rawStats.value.likeCount || 0, icon: 'StarFilled', color: '#dc2626', bgColor: 'rgba(220,38,38,0.08)' },
+    { label: '收藏总数', value: rawStats.value.collectCount || 0, icon: 'Collection', color: '#6b7280', bgColor: 'rgba(107,114,128,0.08)' },
   ]
 })
 
@@ -98,19 +105,36 @@ function getBarWidth(count) {
 .dashboard-view {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 20px;
+}
+
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: none;
+  color: #8e8ea0;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 0;
+  margin-bottom: 8px;
+  transition: color 0.2s;
+
+  &:hover { color: #2d6a4f; }
 }
 
 .page-title {
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 20px;
+  letter-spacing: -0.3px;
 }
 
 .stats-grid {
-  margin-top: 20px;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 16px;
+  gap: 14px;
 }
 
 .stat-card {
@@ -119,77 +143,85 @@ function getBarWidth(count) {
   padding: 20px;
   display: flex;
   align-items: center;
-  gap: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  gap: 14px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
   transition: transform 0.2s;
 
   &:hover { transform: translateY(-2px); }
 
   .stat-icon {
-    width: 60px;
-    height: 60px;
-    border-radius: 12px;
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: color-mix(in srgb, var(--accent) 12%, transparent);
-    color: var(--accent);
     flex-shrink: 0;
   }
 
   .stat-value {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 700;
     line-height: 1.2;
-    color: #303133;
+    color: #1a1a2e;
   }
 
   .stat-label {
     font-size: 13px;
-    color: #909399;
-    margin-top: 4px;
+    color: #8e8ea0;
+    margin-top: 2px;
   }
 }
 
-.category-chart {
-  grid-column: span 2;
+.chart-card, .quick-card {
+  background: #fff;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  padding: 20px;
 
-  .chart-body {
-    min-height: 200px;
+  h3 {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a1a2e;
+    margin-bottom: 16px;
   }
+}
+
+.chart-card {
+  grid-column: span 2;
 }
 
 .bar-list {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
 }
 
 .bar-item {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 
   .bar-label {
-    width: 80px;
+    width: 72px;
     text-align: right;
     font-size: 13px;
-    color: #606266;
+    color: #4a4a68;
     flex-shrink: 0;
   }
 
   .bar-track {
     flex: 1;
-    height: 20px;
-    background: #f5f7fa;
-    border-radius: 10px;
+    height: 16px;
+    background: rgba(45, 106, 79, 0.06);
+    border-radius: 8px;
     overflow: hidden;
   }
 
   .bar-fill {
     height: 100%;
-    background: linear-gradient(90deg, #409eff, #66b1ff);
-    border-radius: 10px;
+    background: linear-gradient(90deg, #2d6a4f, #74c69d);
+    border-radius: 8px;
     transition: width 0.6s ease;
     min-width: 2px;
   }
@@ -197,18 +229,41 @@ function getBarWidth(count) {
   .bar-value {
     width: 50px;
     font-size: 13px;
-    color: #909399;
-    text-align: left;
+    color: #8e8ea0;
   }
 }
 
-.quick-actions {
+.quick-card {
   grid-column: span 1;
+}
 
-  .action-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+.action-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.quick-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  background: rgba(45, 106, 79, 0.02);
+  cursor: pointer;
+  font-size: 13px;
+  color: #4a4a68;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: rgba(45, 106, 79, 0.15);
+    background: rgba(45, 106, 79, 0.05);
+    color: #2d6a4f;
+  }
+
+  .qb-icon {
+    font-size: 18px;
   }
 }
 </style>

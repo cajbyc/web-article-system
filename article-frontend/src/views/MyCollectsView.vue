@@ -1,28 +1,28 @@
 <template>
   <div class="my-collects-view">
-    <el-page-header @back="$router.push('/')" title="返回首页">
-      <template #content><span class="page-title">我的收藏</span></template>
-    </el-page-header>
+    <div class="page-header">
+      <h2>我的收藏</h2>
+    </div>
 
     <div class="content-area" v-loading="loading">
-      <!-- 收藏列表 -->
-      <div v-if="list.length > 0" class="collect-list">
-        <el-card v-for="item in list" :key="item.id" class="collect-card" shadow="hover" @click="$router.push(`/article/${item.id}`)">
-          <div class="card-body">
-            <div class="card-info">
-              <h3 class="card-title">{{ item.title }}</h3>
-              <div class="card-meta">
-                <el-tag size="small" type="info">{{ item.categoryName || '未分类' }}</el-tag>
-                <span class="meta-text"><el-icon><User /></el-icon> {{ item.authorName || '未知作者' }}</span>
-                <span class="meta-text"><el-icon><StarFilled /></el-icon> {{ item.collectCount || 0 }} 人收藏</span>
-                <span class="meta-time">收藏于 {{ formatTime(item.collectedAt || item.createdAt) }}</span>
-              </div>
+      <div v-if="list.length > 0" class="item-list">
+        <div v-for="item in list" :key="item.id" class="list-card" @click="$router.push(`/article/${item.id}`)">
+          <div class="card-info">
+            <h3 class="card-title">{{ item.title }}</h3>
+            <div class="card-meta">
+              <el-tag size="small" class="cat-tag">{{ item.categoryName || '未分类' }}</el-tag>
+              <span class="meta-dot">·</span>
+              <span class="meta-text">{{ item.authorName || '未知作者' }}</span>
+              <span class="meta-dot">·</span>
+              <span class="meta-text">{{ item.collectCount || 0 }} 人收藏</span>
+              <span class="meta-dot">·</span>
+              <span class="meta-time">收藏于 {{ formatTime(item.collectedAt || item.createdAt) }}</span>
             </div>
-            <el-button type="danger" text size="small" class="uncollect-btn" @click.stop="handleUncollect(item)">
-              取消收藏
-            </el-button>
           </div>
-        </el-card>
+          <el-button type="danger" text size="small" @click.stop="handleUncollect(item)">
+            取消收藏
+          </el-button>
+        </div>
 
         <div class="pagination-wrapper" v-if="total > pageSize">
           <el-pagination
@@ -35,7 +35,7 @@
         </div>
       </div>
 
-      <el-empty v-else description="还没有收藏任何文章，去发现好文吧！">
+      <el-empty v-else description="还没有收藏任何文章">
         <el-button type="primary" @click="$router.push('/articles')">浏览文章</el-button>
       </el-empty>
     </div>
@@ -44,7 +44,6 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { User, StarFilled } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getMyCollects, toggleCollect } from '../api/interaction'
 
@@ -94,38 +93,48 @@ function formatTime(timeStr) {
 .my-collects-view {
   max-width: 900px;
   margin: 0 auto;
-  padding: 20px;
 }
 
-.page-title {
-  font-size: 18px;
-  font-weight: bold;
-}
+.page-header {
+  margin-bottom: 20px;
 
-.content-area {
-  margin-top: 20px;
-  min-height: 300px;
-}
-
-.collect-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.collect-card {
-  cursor: pointer;
-
-  :deep(.el-card__body) {
-    padding: 16px 20px;
+  h2 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1a1a2e;
+    margin: 0;
+    letter-spacing: -0.3px;
   }
 }
 
-.card-body {
+.content-area {
+  min-height: 300px;
+}
+
+.item-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.list-card {
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: rgba(45, 106, 79, 0.12);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+    .card-title { color: #2d6a4f; }
+  }
 }
 
 .card-info {
@@ -134,36 +143,36 @@ function formatTime(timeStr) {
 }
 
 .card-title {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 600;
-  color: #303133;
-  margin: 0 0 8px;
+  color: #1a1a2e;
+  margin: 0 0 6px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: color 0.2s;
 }
 
 .card-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 13px;
-  color: #909399;
+  font-size: 12px;
+  color: #8e8ea0;
   flex-wrap: wrap;
+  gap: 0;
 
-  .meta-text {
-    display: inline-flex;
-    align-items: center;
-    gap: 3px;
+  .meta-dot {
+    margin: 0 8px;
+    color: #d4d4dc;
   }
 
-  .meta-time {
-    color: #c0c4cc;
-  }
+  .meta-time { color: #b8b8c8; }
 }
 
-.uncollect-btn {
-  flex-shrink: 0;
+.cat-tag {
+  background: rgba(45, 106, 79, 0.06);
+  border-color: rgba(45, 106, 79, 0.12);
+  color: #2d6a4f;
 }
 
 .pagination-wrapper {
