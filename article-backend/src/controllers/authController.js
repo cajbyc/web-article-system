@@ -298,14 +298,14 @@ async function changePassword(req, res) {
     const user = mockUsers.find(u => u.id === userId)
     if (!user) throw new NotFoundError('用户不存在')
 
-    // admin 模拟密码跳过验证
-    if (user.password === '$2a$10$MOCK_HASHED_PASSWORD_FOR_ADMIN') {
-      // mock admin 直接修改
-    } else {
+    // mock 模式下 admin 首次修改密码跳过旧密码验证（因为密码是模拟值无法校验）
+    const isMockAdmin = user.username === 'admin' && user.password === '$2a$10$MOCK_HASHED_PASSWORD_FOR_ADMIN'
+    if (!isMockAdmin) {
       const isMatch = await comparePassword(oldPassword, user.password)
       if (!isMatch) throw new UnauthorizedError('旧密码不正确')
     }
 
+    // mock 模式下 admin 修改密码后，登录将需要使用新密码（模拟密码跳过逻辑不再生效）
     user.password = await hashPassword(newPassword)
     user.updatedAt = new Date().toISOString()
     return res.json({ success: true, message: '密码修改成功' })
