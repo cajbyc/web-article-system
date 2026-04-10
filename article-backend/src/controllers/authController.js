@@ -214,4 +214,106 @@ async function getCurrentUser(req, res) {
   }
 }
 
-module.exports = { register, login, getCurrentUser }
+// ========== 编辑资料 ==========
+async function updateProfile(req, res) {
+  try {
+    const userId = req.user.id
+    const { nickname, email, avatar } = req.body
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new BadRequestError('邮箱格式不正确')
+    }
+    if (nickname && (nickname.length < 1 || nickname.length > 20)) {
+      throw new BadRequestError('昵称长度需在1-20个字符之间')
+    }
+
+    if (dbAvailable) {
+      const prisma = getPrisma()
+      // 检查邮箱是否被其他用户占用
+      if (email) {
+        const existing = await prisma.user.findFirst({ where: { email, NOT: { id: userId } } })
+        if (existing) { await prisma.$disconnect(); throw new ConflictError('该邮箱已被其他用户使用') }
+      }
+      const updateData = {}
+      if (nickname !== undefined) updateData.nickname = nickname.trim()
+      if (email !== undefined) updateData.email = email
+      if (avatar !== undefined) updateData.avatar = avatar
+
+      const user = await prisma.user.update({
+        where: { id: userId },
+        data: updateData,
+        select: { id: true, username: true, nickname: true, email: true, avatar: true, role: true, status: true, createdAt: true },
+      })
+      await prisma.$disconnect()
+      return res.json({ success: true, message: '资料更新成功', data: user })
+    }
+
+    // 内存模式
+    const user = mockUsers.find(u => u.id === userId)
+    if (!user) throw new NotFoundError('用户不存在')
+    if (nickname !== undefined) user.nickname = nickname.trim()
+    if (email !== undefined) user.email = email
+    if (avatar !== undefined) user.avatar = avatar
+    user.updatedAt = new Date().toISOString()
+    const { password: _, ...info } = user
+    return res.json({ success: true, message: '资料更新成功', data: info })
+  } catch (err) {
+    if (err instanceof (BadRequestError || ConflictError || NotFoundError)) throw err
+    console.error('【更新资料错误】', err)
+    throw err
+  }
+}
+
+// ========== 修改密码 ==========
+async function changePassword(req, res) {
+  try {
+    const userId = req.user.id
+    const { oldPassword, newPassword } = req.body
+
+    if (!oldPassword || !newPassword) {
+      throw new BadRequestError('请输入旧密码和新密码')
+    }
+    if (newPassword.length < 6) {
+      throw new BadRequestError('新密码长度至少为6位')
+    }
+    if (oldPassword === newPassword) {
+      throw new BadRequestError('新密码不能与旧密码相同')
+    }
+
+    if (dbAvailable) {
+      const prisma = getPrisma()
+      const user = await prisma.user.findUnique({ where: { id: userId } })
+      if (!user) { await prisma.$disconnect(); throw new NotFoundError('用户不存在') }
+
+      const isMatch = await comparePassword(oldPassword, user.password)
+      if (!isMatch) { await prisma.$disconnect(); throw new UnauthorizedError('旧密码不正确') }
+
+      const hashedPassword = await hashPassword(newPassword)
+      await prisma.user.update({ where: { id: userId }, data: { password: hashedPassword } })
+      await prisma.$disconnect()
+      return res.json({ success: true, message: '密码修改成功' })
+    }
+
+    // 内存模式
+    const user = mockUsers.find(u => u.id === userId)
+    if (!user) throw new NotFoundError('用户不存在')
+
+    // admin 模拟密码跳过验证
+    if (user.password === '$2a$10$MOCK_HASHED_PASSWORD_FOR_ADMIN') {
+      // mock admin 直接修改
+    } else {
+      const isMatch = await comparePassword(oldPassword, user.password)
+      if (!isMatch) throw new UnauthorizedError('旧密码不正确')
+    }
+
+    user.password = await hashPassword(newPassword)
+    user.updatedAt = new Date().toISOString()
+    return res.json({ success: true, message: '密码修改成功' })
+  } catch (err) {
+    if (err instanceof (BadRequestError || UnauthorizedError || NotFoundError)) throw err
+    console.error('【修改密码错误】', err)
+    throw err
+  }
+}
+
+module.exports = { register, login, getCurrentUser, updateProfile, changePassword }

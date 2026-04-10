@@ -27,6 +27,11 @@ request.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`
     }
+    // 支持 _silent 标记：跳过响应拦截器的全局错误提示
+    if (config._silent) {
+      config.silent = true
+      delete config._silent
+    }
     return config
   },
   (error) => {
@@ -46,6 +51,11 @@ request.interceptors.response.use(
     return res
   },
   (error) => {
+    // 静默请求：不弹全局错误提示
+    if (error.config?.silent) {
+      return Promise.reject(error)
+    }
+
     if (error.response) {
       const { status } = error.response
 
