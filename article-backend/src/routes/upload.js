@@ -5,10 +5,14 @@ const { authMiddleware } = require('../middlewares/auth')
 const fs = require('fs')
 const path = require('path')
 
-// 确保上传目录存在
+// 确保上传目录存在（仅本地环境需要；Vercel Serverless 为只读文件系统，跳过）
 const uploadDir = path.join(__dirname, '../../public/uploads')
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true })
+try {
+  if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true })
+  }
+} catch (e) {
+  // Serverless 环境为只读文件系统，跳过目录创建（上传功能不可用）
 }
 
 /**
