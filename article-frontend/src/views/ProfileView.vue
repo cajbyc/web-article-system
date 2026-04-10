@@ -21,6 +21,10 @@
       <div class="action-bar" style="margin-top: 24px;">
         <el-button type="primary" @click="showEditDialog"><el-icon><EditPen /></el-icon> 编辑资料</el-button>
         <el-button type="warning" @click="showPasswordDialog"><el-icon><Key /></el-icon> 修改密码</el-button>
+        <el-button v-if="canApplyAuthor" type="success" @click="showApplyDialog"><el-icon><Promotion /></el-icon> 申请成为作者</el-button>
+        <el-tag v-if="hasPendingApplication" type="warning" size="large" style="margin-left: 8px;">
+          <el-icon><Clock /></el-icon> 角色申请审核中
+        </el-tag>
       </div>
     </el-card>
 
@@ -58,12 +62,33 @@
         <el-button type="primary" :loading="passwordLoading" @click="handleChangePassword">确认修改</el-button>
       </template>
     </el-dialog>
+
+    <!-- 申请成为作者对话框 -->
+    <el-dialog v-model="applyDialogVisible" title="申请成为作者" width="480px" destroy-on-close>
+      <p style="margin-top: 0; color: #909399;">成为作者后，你将可以发布和管理自己的文章。</p>
+      <el-form label-width="80px">
+        <el-form-item label="申请理由">
+          <el-input
+            v-model="applyReason"
+            type="textarea"
+            :rows="4"
+            placeholder="请简要说明申请理由（选填）"
+            maxlength="200"
+            show-word-limit
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="applyDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="applyLoading" @click="handleApplyAuthor">提交申请</el-button>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
-import { UserFilled, EditPen, Key } from '@element-plus/icons-vue'
+import { UserFilled, EditPen, Key, Promotion, Clock } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { useUserStore } from '../stores/user'
 import request from '../utils/request'
@@ -74,8 +99,24 @@ const userStore = useUserStore()
 const ROLE_LABEL_MAP = Object.freeze({ admin: '管理员', editor: '编辑', author: '作者', user: '普通用户' })
 const ROLE_TAG_TYPE_MAP = Object.freeze({ admin: 'danger', editor: 'warning', author: '', user: 'info' })
 
-onMounted(() => {
-  userStore.fetchUserInfo()
+// 角色申请状态
+const myApplication = ref(null)
+
+onMounted(async () => {
+  await userStore.fetchUserInfo()
+  // 普通用户才需要查询申请状态
+  if (userStore.userInfo?.role === 'user') {
+    fetchMyApplication()
+  }
+})
+
+const canApplyAuthor = computed(() => {
+  const role = userStore.userInfo?.role
+  return role === 'user' && myApplication.value?.status !== 'pending'
+})
+
+const hasPendingApplication = computed(() => {
+  return myApplication.value?.status === 'pending'
 })
 
 const roleLabel = computed(() => ROLE_LABEL_MAP[userStore.userInfo?.role] || '普通用户')
@@ -175,6 +216,42 @@ async function handleChangePassword() {
     console.error('修改密码失败:', err)
   } finally {
     passwordLoading.value = false
+  }
+}
+
+// ========== 申请成为作者 ==========
+const applyDialogVisible = ref(false)
+const applyLoading = ref(false)
+const applyReason = ref('')
+
+async function fetchMyApplication() {
+  try {
+    const res = await request.get('/applications/my', { _silent: true })
+    myApplication.value = res.data
+  } catch {
+    // 静默处理
+  }
+}
+
+function showApplyDialog() {
+  applyReason.value = ''
+  applyDialogVisible.value = true
+}
+
+async function handleApplyAuthor() {
+  applyLoading.value = true
+  try {
+    const res = await request.post('/applications', {
+      toRole: 'author',
+      reason: applyReason.value,
+    })
+    ElMessage.success(res.message || '申请已提交')
+    myApplication.value = res.data
+    applyDialogVisible.value = false
+  } catch (err) {
+    console.error('申请失败:', err)
+  } finally {
+    applyLoading.value = false
   }
 }
 </script>

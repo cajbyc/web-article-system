@@ -50,6 +50,7 @@ app.use('/api/likes', require('./routes/likes'))
 app.use('/api/collects', require('./routes/collects'))
 app.use('/api/comments', require('./routes/comments'))
 app.use('/api/admin', require('./routes/admin'))
+app.use('/api/applications', require('./routes/applications'))
 
 // ========== 统一异常处理中间件 ==========
 const { errorHandler } = require('./middlewares/errorHandler')

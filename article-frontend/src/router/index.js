@@ -117,6 +117,12 @@ const routes = [
         component: () => import('../views/LogsView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true },
       },
+      {
+        path: 'admin/applications',
+        name: 'AdminApplications',
+        component: () => import('../views/ApplicationsView.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true },
+      },
     ],
   },
   {

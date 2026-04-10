@@ -3,6 +3,7 @@ const router = express.Router()
 const { authMiddleware } = require('../middlewares/auth')
 const { recordLog } = require('../utils/logger')
 const adminController = require('../controllers/adminController')
+const { getApplications, reviewApplication } = require('../controllers/applicationController')
 
 // 所有管理员接口需要：登录 + 管理员权限
 router.use(authMiddleware())
@@ -33,5 +34,9 @@ router.delete('/comments/batch', adminController.batchDeleteComments)
 
 // ==================== 操作日志 ====================
 router.get('/logs', adminController.getOperationLogs)
+
+// ==================== 角色申请审批 ====================
+router.get('/applications', getApplications)
+router.put('/applications/:id', reviewApplication)
 
 module.exports = router

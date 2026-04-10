@@ -1,0 +1,163 @@
+<template>
+  <div class="applications-view">
+    <el-card shadow="never">
+      <template #header>
+        <div class="card-header">
+          <h2>角色申请审批</h2>
+          <el-radio-group v-model="filterStatus" size="small" @change="fetchApplications">
+            <el-radio-button value="">全部</el-radio-button>
+            <el-radio-button value="pending">待审核</el-radio-button>
+            <el-radio-button value="approved">已批准</el-radio-button>
+            <el-radio-button value="rejected">已拒绝</el-radio-button>
+          </el-radio-group>
+        </div>
+      </template>
+
+      <el-table :data="applications" v-loading="loading" stripe>
+        <el-table-column label="申请人" min-width="120">
+          <template #default="{ row }">
+            {{ row.nickname || row.username }}
+          </template>
+        </el-table-column>
+        <el-table-column label="申请角色" width="100">
+          <template #default="{ row }">
+            <el-tag>{{ roleLabel(row.toRole) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="申请理由" prop="reason" min-width="200">
+          <template #default="{ row }">
+            {{ row.reason || '未填写' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="100">
+          <template #default="{ row }">
+            <el-tag :type="statusType(row.status)">{{ statusLabel(row.status) }}</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="申请时间" width="170">
+          <template #default="{ row }">
+            {{ formatTime(row.createdAt) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="180" fixed="right">
+          <template #default="{ row }">
+            <template v-if="row.status === 'pending'">
+              <el-button type="success" size="small" @click="handleReview(row, 'approved')">批准</el-button>
+              <el-button type="danger" size="small" @click="handleReview(row, 'rejected')">拒绝</el-button>
+            </template>
+            <span v-else style="color: #909399;">已处理</span>
+          </template>
+        </el-table-column>
+      </el-table>
+
+      <el-empty v-if="!loading && applications.length === 0" description="暂无申请记录" />
+    </el-card>
+
+    <!-- 审批对话框 -->
+    <el-dialog v-model="reviewDialogVisible" :title="reviewAction === 'approved' ? '批准申请' : '拒绝申请'" width="460px" destroy-on-close>
+      <p>确定要{{ reviewAction === 'approved' ? '批准' : '拒绝' }} <strong>{{ currentApp?.nickname || currentApp?.username }}</strong> 的作者申请吗？</p>
+      <el-form label-width="80px" style="margin-top: 16px;">
+        <el-form-item label="审批备注">
+          <el-input v-model="reviewNote" type="textarea" :rows="3" placeholder="选填" maxlength="100" show-word-limit />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="reviewDialogVisible = false">取消</el-button>
+        <el-button :type="reviewAction === 'approved' ? 'success' : 'danger'" :loading="reviewLoading" @click="submitReview">确认</el-button>
+      </template>
+    </el-dialog>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import request from '../utils/request'
+
+const loading = ref(false)
+const applications = ref([])
+const filterStatus = ref('')
+
+// 审批相关
+const reviewDialogVisible = ref(false)
+const reviewLoading = ref(false)
+const reviewAction = ref('')
+const reviewNote = ref('')
+const currentApp = ref(null)
+
+onMounted(() => {
+  fetchApplications()
+})
+
+async function fetchApplications() {
+  loading.value = true
+  try {
+    const params = {}
+    if (filterStatus.value) params.status = filterStatus.value
+    const res = await request.get('/admin/applications', { params })
+    applications.value = res.data
+  } catch (err) {
+    console.error('获取申请列表失败:', err)
+  } finally {
+    loading.value = false
+  }
+}
+
+function handleReview(row, action) {
+  currentApp.value = row
+  reviewAction.value = action
+  reviewNote.value = ''
+  reviewDialogVisible.value = true
+}
+
+async function submitReview() {
+  reviewLoading.value = true
+  try {
+    const res = await request.put(`/admin/applications/${currentApp.value.id}`, {
+      status: reviewAction.value,
+      reviewNote: reviewNote.value,
+    })
+    ElMessage.success(res.message)
+    reviewDialogVisible.value = false
+    fetchApplications()
+  } catch (err) {
+    console.error('审批失败:', err)
+  } finally {
+    reviewLoading.value = false
+  }
+}
+
+function roleLabel(role) {
+  return { author: '作者', editor: '编辑' }[role] || role
+}
+
+function statusType(status) {
+  return { pending: 'warning', approved: 'success', rejected: 'danger' }[status] || 'info'
+}
+
+function statusLabel(status) {
+  return { pending: '待审核', approved: '已批准', rejected: '已拒绝' }[status] || status
+}
+
+function formatTime(timeStr) {
+  if (!timeStr) return '-'
+  return new Date(timeStr).toLocaleString('zh-CN')
+}
+</script>
+
+<style lang="scss" scoped>
+.applications-view {
+  padding: 20px;
+
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h2 {
+      font-size: 20px;
+      margin: 0;
+    }
+  }
+}
+</style>

@@ -71,6 +71,10 @@ const mockComments = []
 
 const mockRecycleBin = []
 
+// 角色申请记录
+let nextApplicationId = 1
+const mockRoleApplications = [] // { id, userId, username, nickname, fromRole, toRole, reason, status: 'pending'|'approved'|'rejected', reviewedBy, reviewNote, createdAt, reviewedAt }
+
 module.exports = {
   mockCategories,
   mockUsers,
@@ -85,4 +89,7 @@ module.exports = {
   getNextCommentId() { return nextCommentId++ },
   mockComments,
   mockRecycleBin,
+  mockRoleApplications,
+  nextApplicationId,
+  getNextApplicationId() { return nextApplicationId++ },
 }

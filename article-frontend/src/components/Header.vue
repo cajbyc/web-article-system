@@ -56,6 +56,9 @@
             <el-menu-item index="/profile">
               <el-icon><UserFilled /></el-icon>个人中心
             </el-menu-item>
+            <el-menu-item index="/admin/applications" v-if="userStore.userInfo?.role === 'admin'">
+              <el-icon><Checked /></el-icon>角色审批
+            </el-menu-item>
             <el-menu-item index="/my/recycle" v-if="isEditor">
               <el-icon><Delete /></el-icon>回收站
             </el-menu-item>
@@ -82,7 +85,7 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { Edit, UserFilled, SwitchButton, EditPen, Delete, Star, StarFilled, ChatDotRound, DataAnalysis, Search } from '@element-plus/icons-vue'
+import { Edit, UserFilled, SwitchButton, EditPen, Delete, Star, StarFilled, ChatDotRound, DataAnalysis, Search, Checked } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
