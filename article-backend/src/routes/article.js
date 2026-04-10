@@ -2,13 +2,16 @@ const express = require('express')
 const router = express.Router()
 const {
   getArticleList, getArticleById, createArticle, updateArticle, deleteArticle,
-  getMyArticles, getRecycleBin, restoreArticle, permanentDelete, getCategories,
+  getMyArticles, getRecycleBin, restoreArticle, permanentDelete, getCategories, getPublicStats,
 } = require('../controllers/articleController')
 const { authMiddleware } = require('../middlewares/auth')
 const { checkRole } = require('../middlewares/role')
 
 // ========== 分类 ==========
 router.get('/categories', getCategories)
+
+// ========== 公开统计 ==========
+router.get('/stats', getPublicStats)
 
 // ========== 文章列表（公开） ==========
 router.get('/', getArticleList)
@@ -19,16 +22,16 @@ router.get('/:id', getArticleById)
 // 以下接口均需登录
 router.use(authMiddleware())
 
-// ========== 发布/编辑/删除（需 editor 或 admin）==========
-router.post('/', checkRole(['editor', 'admin']), createArticle)
-router.put('/:id', checkRole(['editor', 'admin']), updateArticle)
-router.delete('/:id', checkRole(['editor', 'admin']), deleteArticle)
+// ========== 发布/编辑/删除（需 editor/author 或 admin）==========
+router.post('/', checkRole(['editor', 'author', 'admin']), createArticle)
+router.put('/:id', checkRole(['editor', 'author', 'admin']), updateArticle)
+router.delete('/:id', checkRole(['editor', 'author', 'admin']), deleteArticle)
 
 // ========== 我的文章 ==========
-router.get('/my', checkRole(['editor', 'admin']), getMyArticles)
+router.get('/my', checkRole(['editor', 'author', 'admin']), getMyArticles)
 
 // ========== 回收站 ==========
-router.get('/recycle', checkRole(['editor', 'admin']), getRecycleBin)
+router.get('/recycle', checkRole(['editor', 'author', 'admin']), getRecycleBin)
 router.post('/:id/restore', restoreArticle)
 router.delete('/:id/permanent', permanentDelete)
 

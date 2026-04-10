@@ -172,7 +172,7 @@ async function login(req, res) {
     }
 
     // 账号被禁用
-    if (!user.status === false) {
+    if (user.status === false) {
       throw new ForbiddenError('账号已被禁用，请联系管理员解封后重试。如有疑问请联系 support@example.com')
     }
 

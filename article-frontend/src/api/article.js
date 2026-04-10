@@ -50,6 +50,11 @@ export function getCategories() {
   return request.get('/articles/categories')
 }
 
+// ========== 公开统计（首页概览）==========
+export function getPublicStats() {
+  return request.get('/articles/stats')
+}
+
 // ========== 图片上传 ==========
 export function uploadImage(file) {
   const formData = new FormData()

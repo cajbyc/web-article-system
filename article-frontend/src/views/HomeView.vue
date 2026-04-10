@@ -1,67 +1,130 @@
 <template>
   <div class="home-view">
-    <el-row :gutter="20">
-      <el-col :span="16" :xs="24">
-        <div class="hero-section">
-          <h1>欢迎来到多角色文章管理系统</h1>
-          <p>一个功能完善的毕业设计项目，支持多角色管理、文章发布与审核等功能。</p>
-          <el-button type="primary" size="large" @click="$router.push('/articles')">
-            浏览文章
-          </el-button>
-        </div>
+    <!-- ========== Banner 横幅区 ========== -->
+    <div class="hero-section">
+      <h1>欢迎使用多角色文章管理系统</h1>
+      <p>支持文章创作、互动交流、权限管控，公网可访问</p>
+      <div class="hero-btns">
+        <el-button type="primary" size="large" @click="$router.push('/articles')">
+          立即浏览
+        </el-button>
+        <el-button v-if="!userStore.isLoggedIn" size="large" @click="$router.push('/register')">
+          立即注册
+        </el-button>
+        <el-button v-if="isEditor" type="warning" size="large" @click="$router.push('/article/create')">
+          发布文章
+        </el-button>
+        <el-button v-if="isAdmin" type="danger" size="large" @click="$router.push('/admin/dashboard')">
+          管理后台
+        </el-button>
+      </div>
+    </div>
 
-        <div class="section-title">最新文章</div>
-        <ArticleCard
-          v-for="article in latestArticles"
-          :key="article.id"
-          :article="article"
-        />
-      </el-col>
+    <!-- ========== 文章分类入口 ========== -->
+    <div class="section-title">文章分类</div>
+    <div class="category-grid">
+      <div
+        v-for="cat in categories"
+        :key="cat.id"
+        class="category-item"
+        @click="$router.push(`/articles?categoryId=${cat.id}`)"
+      >
+        <span class="cat-icon">{{ catIcons[cat.name] || '📖' }}</span>
+        <span class="cat-name">{{ cat.name }}</span>
+        <span class="cat-count">{{ cat.articleCount || 0 }} 篇</span>
+      </div>
+    </div>
 
-      <el-col :span="8" :xs="24">
-        <div class="sidebar">
-          <div class="sidebar-card">
-            <h3><el-icon><DataLine /></el-icon> 系统公告</h3>
-            <ul>
-              <li v-for="(notice, i) in notices" :key="i">{{ notice }}</li>
-            </ul>
-          </div>
-          <div class="sidebar-card">
-            <h3><el-icon><TrendCharts /></el-icon> 热门文章</h3>
-            <ol class="hot-list">
-              <li v-for="(item, i) in hotArticles" :key="i" @click="$router.push(`/article/${item.id}`)">
-                {{ item.title }}
-              </li>
-            </ol>
-          </div>
-        </div>
-      </el-col>
-    </el-row>
+    <!-- ========== 文章卡片列表 ========== -->
+    <div class="section-title">最新文章</div>
+    <div v-loading="loading" class="article-list">
+      <div v-if="articles.length === 0 && !loading" class="empty-tip">
+        <el-empty description="暂无文章，快来发布第一篇吧！" :image-size="80" />
+      </div>
+      <ArticleCard
+        v-for="article in articles"
+        :key="article.id"
+        :article="article"
+      />
+      <div class="more-btn" v-if="articles.length > 0">
+        <el-button type="primary" text @click="$router.push('/articles')">
+          查看更多文章 →
+        </el-button>
+      </div>
+    </div>
+
+    <!-- ========== 公开数据概览 ========== -->
+    <div class="section-title">数据概览</div>
+    <div class="stats-grid">
+      <div class="stat-item">
+        <span class="stat-num">{{ stats.articleCount }}</span>
+        <span class="stat-label">文章总数</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">{{ stats.userCount }}</span>
+        <span class="stat-label">注册用户</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">{{ stats.commentCount }}</span>
+        <span class="stat-label">评论总数</span>
+      </div>
+      <div class="stat-item">
+        <span class="stat-num">{{ stats.likeCount }}</span>
+        <span class="stat-label">点赞总数</span>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { DataLine, TrendCharts } from '@element-plus/icons-vue'
+import { ref, computed, onMounted } from 'vue'
 import ArticleCard from '../components/ArticleCard.vue'
+import { getArticleList, getCategories, getPublicStats } from '../api/article'
+import { useUserStore } from '../stores/user'
 
-const latestArticles = ref([
-  { id: 1, title: 'Vue3 组合式 API 完全指南', summary: '深入理解 Vue3 的 Composition API，掌握现代 Vue 开发方式...', author: '管理员', date: '2026-04-08', views: 128 },
-  { id: 2, title: 'Pinia 状态管理最佳实践', summary: 'Pinia 是 Vue3 官方推荐的状态管理库，本文介绍其核心用法...', author: '编辑', date: '2026-04-07', views: 96 },
-  { id: 3, title: 'Element Plus 组件库使用技巧', summary: '汇总 Element Plus 中常用组件的使用技巧和注意事项...', author: '作者', date: '2026-04-06', views: 74 },
-])
+const userStore = useUserStore()
+const isEditor = computed(() => {
+  const role = userStore.userInfo?.role
+  return role === 'admin' || role === 'editor' || role === 'author'
+})
+const isAdmin = computed(() => userStore.userInfo?.role === 'admin')
 
-const notices = ref([
-  '系统已升级至 V2.0 版本',
-  '新增文章审核流程',
-  '支持 Markdown 编辑器',
-])
+const catIcons = {
+  '学习笔记': '📝',
+  '课程报告': '📊',
+  '技术分享': '💻',
+  '校园随笔': '🏫',
+  '学术交流': '🎓',
+}
 
-const hotArticles = ref([
-  { id: 1, title: 'Vue3 组合式 API 完全指南' },
-  { id: 4, title: '前端工程化实践总结' },
-  { id: 2, title: 'Pinia 状态管理最佳实践' },
-])
+const articles = ref([])
+const categories = ref([])
+const stats = ref({ articleCount: 0, userCount: 0, commentCount: 0, likeCount: 0 })
+const loading = ref(false)
+
+onMounted(async () => {
+  loading.value = true
+  try {
+    const [articlesRes, catsRes, statsRes] = await Promise.allSettled([
+      getArticleList({ page: 1, pageSize: 6 }),
+      getCategories(),
+      getPublicStats(),
+    ])
+    if (articlesRes.status === 'fulfilled') {
+      articles.value = articlesRes.value.data?.list || []
+    }
+    if (catsRes.status === 'fulfilled') {
+      categories.value = catsRes.value.data || []
+    }
+    if (statsRes.status === 'fulfilled') {
+      stats.value = statsRes.value.data || stats.value
+    }
+  } catch (err) {
+    console.error('首页数据加载失败:', err)
+  } finally {
+    loading.value = false
+  }
+})
 </script>
 
 <style lang="scss" scoped>
@@ -69,76 +132,129 @@ const hotArticles = ref([
   padding-top: 10px;
 }
 
+// ===== Banner 横幅区 =====
 .hero-section {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #1677ff 0%, #69b1ff 100%);
   border-radius: 12px;
   padding: 48px 40px;
   color: #fff;
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 
   h1 {
     font-size: 28px;
     margin-bottom: 12px;
   }
+
   p {
     font-size: 16px;
     opacity: 0.9;
     margin-bottom: 24px;
+  }
+
+  .hero-btns {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
   }
 }
 
 .section-title {
   font-size: 20px;
   font-weight: bold;
-  margin: 20px 0 14px;
+  margin: 24px 0 14px;
   padding-left: 10px;
-  border-left: 4px solid #409eff;
+  border-left: 4px solid #1677ff;
 }
 
-.sidebar-card {
+// ===== 分类入口 =====
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.category-item {
   background: #fff;
-  border-radius: 8px;
-  padding: 20px;
-  margin-bottom: 20px;
+  border-radius: 10px;
+  padding: 20px 16px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: transform 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+  }
+
+  .cat-icon {
+    font-size: 32px;
+    display: block;
+    margin-bottom: 8px;
+  }
+
+  .cat-name {
+    display: block;
+    font-size: 15px;
+    font-weight: 600;
+    color: #303133;
+    margin-bottom: 4px;
+  }
+
+  .cat-count {
+    font-size: 13px;
+    color: #909399;
+  }
+}
+
+// ===== 文章列表 =====
+.article-list {
+  min-height: 100px;
+}
+
+.more-btn {
+  text-align: center;
+  padding: 16px 0;
+}
+
+// ===== 数据概览 =====
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.stat-item {
+  background: #fff;
+  border-radius: 10px;
+  padding: 24px 16px;
+  text-align: center;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
 
-  h3 {
-    font-size: 16px;
-    margin-bottom: 14px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  .stat-num {
+    display: block;
+    font-size: 32px;
+    font-weight: bold;
+    color: #1677ff;
+    margin-bottom: 6px;
   }
 
-  ul, ol {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  li {
-    padding: 8px 0;
+  .stat-label {
     font-size: 14px;
-    color: #606266;
-    cursor: pointer;
-
-    &:hover {
-      color: #409eff;
-    }
-  }
-}
-
-.hot-list {
-  counter-reset: hot-counter;
-
-  li {
-    &::before {
-      counter-increment: hot-counter;
-      content: counter(hot-counter) '. ';
-      color: #409eff;
-      font-weight: bold;
-      margin-right: 4px;
-    }
+    color: #909399;
   }
 }
 </style>

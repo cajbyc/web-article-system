@@ -469,7 +469,36 @@ async function getCategories(req, res) {
   }
 }
 
+// ========== 公开数据统计（首页概览用，无需登录）==========
+async function getPublicStats(req, res) {
+  try {
+    if (dbAvailable) {
+      const prisma = getPrisma()
+      const [articleCount, userCount, commentCount, likeCount] = await Promise.all([
+        prisma.article.count({ where: { status: 'published' } }),
+        prisma.user.count({ where: { status: true } }),
+        prisma.comment.count(),
+        prisma.like.count(),
+      ])
+      await prisma.$disconnect()
+      return res.json({ success: true, data: { articleCount, userCount, commentCount, likeCount } })
+    }
+    // 内存模拟
+    return res.json({
+      success: true,
+      data: {
+        articleCount: mockArticles.filter(a => a.status === 'published').length,
+        userCount: 1,
+        commentCount: 0,
+        likeCount: mockArticles.reduce((s, a) => s + (a.likeCount || 0), 0),
+      },
+    })
+  } catch (err) {
+    res.status(500).json({ success: false, message: '服务器内部错误' })
+  }
+}
+
 module.exports = {
   getArticleList, getArticleById, createArticle, updateArticle, deleteArticle,
-  getMyArticles, getRecycleBin, restoreArticle, permanentDelete, getCategories,
+  getMyArticles, getRecycleBin, restoreArticle, permanentDelete, getCategories, getPublicStats,
 }

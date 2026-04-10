@@ -1,7 +1,7 @@
 <template>
   <footer class="app-footer">
     <div class="footer-inner">
-      <p>&copy; 2026 多角色文章管理系统 - 毕业设计项目</p>
+      <p>&copy;2026 文章管理系统 | Vercel 部署 | 毕业设计专用</p>
     </div>
   </footer>
 </template>

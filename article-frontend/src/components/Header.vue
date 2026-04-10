@@ -5,6 +5,20 @@
         <el-icon :size="24"><Edit /></el-icon>
         <span>文章管理系统</span>
       </div>
+
+      <!-- 全局搜索框 -->
+      <div class="global-search">
+        <el-input
+          v-model="searchKeyword"
+          placeholder="搜索文章标题或分类..."
+          :prefix-icon="Search"
+          clearable
+          size="default"
+          @keyup.enter="handleSearch"
+          @clear="handleSearch"
+        />
+      </div>
+
       <el-menu
         :default-active="activeMenu"
         mode="horizontal"
@@ -14,6 +28,7 @@
       >
         <el-menu-item index="/">首页</el-menu-item>
         <el-menu-item index="/articles">文章列表</el-menu-item>
+        <el-menu-item index="/about">使用说明</el-menu-item>
 
         <!-- 未登录时显示 -->
         <template v-if="!userStore.userInfo">
@@ -61,15 +76,17 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { Edit, UserFilled, SwitchButton, EditPen, Delete, Star, ChatDotRound, DataAnalysis } from '@element-plus/icons-vue'
+import { Edit, UserFilled, SwitchButton, EditPen, Delete, Star, ChatDotRound, DataAnalysis, Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+
+const searchKeyword = ref('')
 
 const activeMenu = computed(() => {
   if (route.path.startsWith('/article/')) return '/articles'
@@ -80,6 +97,15 @@ const isEditor = computed(() => {
   const role = userStore.userInfo?.role
   return ['admin', 'editor', 'author'].includes(role)
 })
+
+function handleSearch() {
+  const keyword = searchKeyword.value.trim()
+  if (keyword) {
+    router.push({ path: '/articles', query: { keyword } })
+  } else {
+    router.push('/articles')
+  }
+}
 
 function handleLogout() {
   userStore.logout()
@@ -103,6 +129,7 @@ function handleLogout() {
   display: flex;
   align-items: center;
   padding: 0 20px;
+  gap: 12px;
 
   @media (max-width: 1240px) {
     padding: 0 16px;
@@ -115,10 +142,19 @@ function handleLogout() {
   gap: 8px;
   font-size: 18px;
   font-weight: bold;
-  color: #409eff;
+  color: #1677ff;
   cursor: pointer;
-  margin-right: 40px;
   white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.global-search {
+  width: 240px;
+  flex-shrink: 0;
+
+  @media (max-width: 768px) {
+    width: 140px;
+  }
 }
 
 .nav-menu {

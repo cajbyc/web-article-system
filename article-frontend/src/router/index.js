@@ -33,18 +33,23 @@ const routes = [
         name: 'ArticleList',
         component: () => import('../views/ArticleListView.vue'),
       },
+      {
+        path: 'about',
+        name: 'About',
+        component: () => import('../views/AboutView.vue'),
+      },
       // 文章相关路由（具体路径必须在 :id 之前）
       {
         path: 'article/create',
         name: 'ArticleCreate',
         component: () => import('../views/ArticleEditorView.vue'),
-        meta: { requiresAuth: true, roles: ['editor', 'admin'] },
+        meta: { requiresAuth: true, roles: ['editor', 'author', 'admin'] },
       },
       {
         path: 'article/edit/:id',
         name: 'ArticleEdit',
         component: () => import('../views/ArticleEditorView.vue'),
-        meta: { requiresAuth: true, roles: ['editor', 'admin'] },
+        meta: { requiresAuth: true, roles: ['editor', 'author', 'admin'] },
       },
       {
         path: 'article/:id',
@@ -55,13 +60,13 @@ const routes = [
         path: 'my/articles',
         name: 'MyArticles',
         component: () => import('../views/MyArticlesView.vue'),
-        meta: { requiresAuth: true, roles: ['editor', 'admin'] },
+        meta: { requiresAuth: true, roles: ['editor', 'author', 'admin'] },
       },
       {
         path: 'my/recycle',
         name: 'RecycleBin',
         component: () => import('../views/RecycleBinView.vue'),
-        meta: { requiresAuth: true, roles: ['editor', 'admin'] },
+        meta: { requiresAuth: true, roles: ['editor', 'author', 'admin'] },
       },
       {
         path: 'my/collects',
@@ -134,6 +139,20 @@ router.beforeEach((to, from, next) => {
         const userInfo = JSON.parse(userInfoStr || '{}')
         if (userInfo.role !== 'admin') {
           ElMessage.error('无权限访问管理后台，需要管理员账号')
+          next({ path: '/' })
+        } else {
+          next()
+        }
+      } catch {
+        ElMessage.error('登录信息异常，请重新登录')
+        next({ name: 'Login' })
+      }
+    } else if (to.meta.roles) {
+      // 需要特定角色
+      try {
+        const userInfo = JSON.parse(userInfoStr || '{}')
+        if (!to.meta.roles.includes(userInfo.role)) {
+          ElMessage.error('权限不足，无法访问该页面')
           next({ path: '/' })
         } else {
           next()
