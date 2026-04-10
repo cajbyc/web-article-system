@@ -36,7 +36,7 @@
           :class="{ active: isLiked }"
           @click="handleToggleLike"
         >
-          <el-icon :size="20"><HeartFilled v-if="isLiked" /><Heart v-else /></el-icon>
+          <el-icon :size="20"><HeartFilled /></el-icon>
           <span>{{ isLiked ? '已赞' : '点赞' }}</span>
           <span class="count">{{ likeCount }}</span>
         </div>
@@ -130,7 +130,7 @@
 import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import {
-  Clock, View, HeartFilled, Heart, StarFilled, Star,
+  Clock, View, HeartFilled, StarFilled, Star,
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
