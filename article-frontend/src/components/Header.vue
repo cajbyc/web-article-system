@@ -10,7 +10,7 @@
       <div class="global-search">
         <el-input
           v-model="searchKeyword"
-          placeholder="搜索文章标题或分类..."
+          placeholder="搜索文章标题或内容..."
           :prefix-icon="Search"
           clearable
           size="default"

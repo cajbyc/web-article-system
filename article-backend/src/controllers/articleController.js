@@ -33,7 +33,7 @@ async function getArticleList(req, res) {
         else where.status = { in: ['published'] }
       }
       if (categoryId) where.categoryId = categoryId
-      if (keyword) where.title = { contains: keyword }
+      if (keyword) where.OR = [{ title: { contains: keyword } }, { content: { contains: keyword } }]
 
       const [articles, total] = await Promise.all([
         prisma.article.findMany({
@@ -56,7 +56,7 @@ async function getArticleList(req, res) {
       if (status) filtered = filtered.filter(a => a.status === status)
     }
     if (categoryId) filtered = filtered.filter(a => a.categoryId === categoryId)
-    if (keyword) filtered = filtered.filter(a => a.title.includes(keyword))
+    if (keyword) filtered = filtered.filter(a => a.title.includes(keyword) || a.content.includes(keyword))
 
     const start = (page - 1) * pageSize
     const list = filtered.slice(start, start + pageSize).map(

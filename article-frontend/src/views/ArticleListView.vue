@@ -3,14 +3,6 @@
     <div class="list-header">
       <h2>文章列表</h2>
       <div class="header-actions">
-        <el-input
-          v-model="keyword"
-          placeholder="搜索文章..."
-          :prefix-icon="Search"
-          style="width: 240px;"
-          clearable
-          @input="handleSearch"
-        />
         <el-button v-if="userStore.isLoggedIn" type="primary" @click="$router.push('/article/create')">
           <el-icon><EditPen /></el-icon> 新建文章
         </el-button>
@@ -58,27 +50,34 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
-import { Search, EditPen } from '@element-plus/icons-vue'
+import { ref, onMounted, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { EditPen } from '@element-plus/icons-vue'
 import ArticleCard from '../components/ArticleCard.vue'
 import { getArticleList, getCategories } from '../api/article'
 import { useUserStore } from '../stores/user'
 
+const route = useRoute()
 const userStore = useUserStore()
 const loading = ref(false)
 const articles = ref([])
 const categories = ref([])
-const keyword = ref('')
+const keyword = ref(route.query.keyword || '')
 const categoryId = ref(0)
 const page = ref(1)
 const pageSize = 8
 const total = ref(0)
 
-let searchTimer = null
-
 onMounted(async () => {
   const res = await getCategories()
   categories.value = res.data
+  fetchArticles()
+})
+
+// 监听路由 query 变化（Header 搜索框跳转触发）
+watch(() => route.query.keyword, (val) => {
+  keyword.value = val || ''
+  page.value = 1
   fetchArticles()
 })
 
@@ -92,14 +91,6 @@ function fetchArticles() {
     articles.value = res.data.list
     total.value = res.data.total
   }).catch(() => {}).finally(() => { loading.value = false })
-}
-
-function handleSearch() {
-  clearTimeout(searchTimer)
-  searchTimer = setTimeout(() => {
-    page.value = 1
-    fetchArticles()
-  }, 400)
 }
 </script>
 
