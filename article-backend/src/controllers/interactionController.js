@@ -101,6 +101,41 @@ async function getLikeStatus(req, res) {
   }
 }
 
+async function getMyLikes(req, res) {
+  try {
+    const page = parseInt(req.query.page) || 1
+    const pageSize = parseInt(req.query.pageSize) || 10
+    const userId = req.user.id
+
+    if (dbAvailable) {
+      const prisma = getPrisma()
+      const [likes, total] = await Promise.all([
+        prisma.like.findMany({
+          where: { userId },
+          include: { article: { include: { category: true, user: { select: { id: true, nickname: true, username: true } } } } },
+          orderBy: { createdAt: 'desc' }, skip: (page - 1) * pageSize, take: pageSize,
+        }),
+        prisma.like.count({ where: { userId } }),
+      ])
+      await prisma.$disconnect()
+      return res.json({ success: true, data: { list: likes.map(l => ({ ...l.article, likedAt: l.createdAt })), total, page, pageSize } })
+    }
+
+    const likedIds = []
+    mockLikes.forEach((key) => { const [uid, aid] = key.split('-'); if (parseInt(uid) === userId) likedIds.push(parseInt(aid)) })
+
+    const articles = likedIds.map(id => {
+      const art = mockArticles.find(a => a.id === id)
+      return art ? { ...art, categoryName: '技术分享', authorName: '未知作者', likedAt: new Date().toISOString() } : null
+    }).filter(Boolean)
+
+    return res.json({ success: true, data: { list: articles.slice((page - 1) * pageSize, page * pageSize), total: articles.length, page, pageSize } })
+  } catch (err) {
+    console.error('【我的点赞列表错误】', err)
+    throw err
+  }
+}
+
 // ============================================================
 //  收藏功能
 // ============================================================
@@ -344,4 +379,4 @@ async function getMyComments(req, res) {
   }
 }
 
-module.exports = { toggleLike, getLikeStatus, toggleCollect, getCollectStatus, getMyCollects, createComment, getComments, deleteComment, getMyComments }
+module.exports = { toggleLike, getLikeStatus, getMyLikes, toggleCollect, getCollectStatus, getMyCollects, createComment, getComments, deleteComment, getMyComments }

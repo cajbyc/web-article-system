@@ -75,6 +75,12 @@ const routes = [
         meta: { requiresAuth: true },
       },
       {
+        path: 'my/likes',
+        name: 'MyLikes',
+        component: () => import('../views/MyLikesView.vue'),
+        meta: { requiresAuth: true },
+      },
+      {
         path: 'my/comments',
         name: 'MyComments',
         component: () => import('../views/MyCommentsView.vue'),

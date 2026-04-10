@@ -10,6 +10,10 @@ export function getLikeStatus(articleId) {
   return request.get(`/likes/status/${articleId}`)
 }
 
+export function getMyLikes(params) {
+  return request.get('/likes/my', { params })
+}
+
 // ==================== 收藏 API ====================
 
 export function toggleCollect(articleId) {

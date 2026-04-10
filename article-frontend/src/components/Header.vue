@@ -62,6 +62,9 @@
             <el-menu-item index="/my/collects">
               <el-icon><Star /></el-icon>我的收藏
             </el-menu-item>
+            <el-menu-item index="/my/likes">
+              <el-icon><StarFilled /></el-icon>我的点赞
+            </el-menu-item>
             <el-menu-item index="/my/comments">
               <el-icon><ChatDotRound /></el-icon>我的评论
             </el-menu-item>
@@ -79,7 +82,7 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { Edit, UserFilled, SwitchButton, EditPen, Delete, Star, ChatDotRound, DataAnalysis, Search } from '@element-plus/icons-vue'
+import { Edit, UserFilled, SwitchButton, EditPen, Delete, Star, StarFilled, ChatDotRound, DataAnalysis, Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
