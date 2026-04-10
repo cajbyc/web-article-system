@@ -8,8 +8,10 @@
     "start": "node src/index.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "npx prisma migrate dev --name add_article_models",
+    "prisma:deploy": "prisma migrate deploy",
     "prisma:studio": "npx prisma studio",
-    "prisma:seed": "npx prisma db seed"
+    "prisma:seed": "npx prisma db seed",
+    "postbuild": "prisma generate"
   },
   "prisma": {
     "seed": "node prisma/seed.js"

@@ -86,7 +86,10 @@ const isEdit = computed(() => !!route.params.id)
 const articleId = computed(() => route.params.id)
 
 // 上传相关
-const uploadAction = computed(() => `${import.meta.env.VITE_API_BASE || 'http://localhost:3000'}/api/upload/image`)
+const uploadAction = computed(() => {
+  const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api'
+  return `${baseUrl.replace(/\/api\/?$/, '')}/api/upload/image`
+})
 const uploadHeaders = computed(() => ({
   Authorization: `Bearer ${localStorage.getItem('token')}`,
 }))

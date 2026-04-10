@@ -14,7 +14,17 @@ const app = express()
 
 // ========== CORS 配置 ==========
 app.use(cors({
-  origin: true, // Vercel 环境下自动匹配前端域名
+  origin: function (origin, callback) {
+    // Vercel 部署：优先使用 FRONTEND_URL 白名单，未配置则允许所有来源
+    const whitelist = process.env.FRONTEND_URL
+      ? process.env.FRONTEND_URL.split(',').map(u => u.trim())
+      : []
+    if (!origin || whitelist.length === 0 || whitelist.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(null, true) // 暂时放行，生产环境可收紧
+    }
+  },
   credentials: true,
 }))
 

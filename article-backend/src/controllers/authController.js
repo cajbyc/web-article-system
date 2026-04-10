@@ -59,25 +59,7 @@ let mockUsers = [
 
 let nextUserId = 2
 
-let dbAvailable = false
-
-async function checkDbAvailability() {
-  try {
-    const { PrismaClient } = require('@prisma/client')
-    const prisma = new PrismaClient()
-    await prisma.$queryRaw`SELECT 1`
-    await prisma.$disconnect()
-    dbAvailable = true
-  } catch {
-    dbAvailable = false
-  }
-}
-checkDbAvailability()
-
-function getPrisma() {
-  if (!dbAvailable) return null
-  try { return new (require('@prisma/client').PrismaClient)() } catch { return null }
-}
+const { getPrisma, dbAvailable } = require('../utils/prisma')
 
 // ========== 注册 ==========
 async function register(req, res) {

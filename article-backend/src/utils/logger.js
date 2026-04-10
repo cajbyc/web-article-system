@@ -1,22 +1,4 @@
-let dbAvailable = false
-
-async function checkDb() {
-  try {
-    const { PrismaClient } = require('@prisma/client')
-    const p = new PrismaClient()
-    await p.$queryRaw`SELECT 1`
-    await p.$disconnect()
-    dbAvailable = true
-  } catch {
-    dbAvailable = false
-  }
-}
-checkDb()
-
-function getPrisma() {
-  if (!dbAvailable) return null
-  try { return new (require('@prisma/client').PrismaClient)() } catch { return null }
-}
+const { getPrisma, dbAvailable } = require('./prisma')
 
 // ========== 内存日志存储（无数据库时使用）==========
 const mockLogs = []

@@ -1,23 +1,9 @@
-const { PrismaClient } = require('@prisma/client')
+const { getPrisma, dbAvailable } = require('../utils/prisma')
 const {
   BadRequestError,
   ForbiddenError,
   NotFoundError,
 } = require('../utils/errors')
-
-let dbAvailable = false
-async function checkDb() {
-  try {
-    const p = new PrismaClient(); await p.$queryRaw`SELECT 1`; await p.$disconnect()
-    dbAvailable = true
-  } catch { dbAvailable = false }
-}
-checkDb()
-
-function getPrisma() {
-  if (!dbAvailable) return null
-  try { return new PrismaClient() } catch { return null }
-}
 
 // ========== 内存模拟数据 ==========
 const mockUsers = [

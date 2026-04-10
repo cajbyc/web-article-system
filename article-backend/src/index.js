@@ -10,11 +10,19 @@ const PORT = process.env.PORT || 3000
 
 // ========== 中间件 ==========
 app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:5174',
-    ...(process.env.FRONTEND_URL ? [process.env.FRONTEND_URL] : []),
-  ],
+  origin: function (origin, callback) {
+    const whitelist = [
+      'http://localhost:5173',
+      'http://localhost:5174',
+      ...(process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(u => u.trim()) : []),
+    ]
+    // 允许无 origin 的请求（如服务端请求、Postman）
+    if (!origin || whitelist.includes(origin)) {
+      callback(null, true)
+    } else {
+      callback(null, true) // 开发阶段放行所有来源，生产环境可改为 callback(new Error('Not allowed'))
+    }
+  },
   credentials: true,
 }))
 

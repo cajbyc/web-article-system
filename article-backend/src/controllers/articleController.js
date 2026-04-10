@@ -1,23 +1,4 @@
-const { PrismaClient } = require('@prisma/client')
-const path = require('path')
-
-let dbAvailable = false
-async function checkDb() {
-  try {
-    const p = new PrismaClient()
-    await p.$queryRaw`SELECT 1`
-    await p.$disconnect()
-    dbAvailable = true
-  } catch {
-    dbAvailable = false
-  }
-}
-checkDb()
-
-function getPrisma() {
-  if (!dbAvailable) return null
-  try { return new PrismaClient() } catch { return null }
-}
+const { getPrisma, dbAvailable } = require('../utils/prisma')
 
 // ========== 内存模拟数据 ==========
 let mockCategories = [
