@@ -65,7 +65,7 @@
             <el-menu-item index="/my/comments">
               <el-icon><ChatDotRound /></el-icon>我的评论
             </el-menu-item>
-            <el-menu-item divided @click="handleLogout">
+            <el-menu-item index="logout" divided @click="handleLogout">
               <el-icon><SwitchButton /></el-icon>退出登录
             </el-menu-item>
           </el-sub-menu>

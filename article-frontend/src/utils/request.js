@@ -51,6 +51,11 @@ request.interceptors.response.use(
 
       switch (status) {
         case 401:
+          // 登录/注册接口的 401 直接透传，不自动跳转（避免循环）
+          if (error.config?.url?.includes('/auth/login') || error.config?.url?.includes('/auth/register')) {
+            ElMessage.error(error.response.data?.message || '用户名或密码错误')
+            break
+          }
           ElMessage.error('登录已过期，请重新登录')
           localStorage.removeItem('token')
           localStorage.removeItem('userInfo')

@@ -16,6 +16,9 @@ export const useUserStore = defineStore('user', () => {
 
   /** 登录 */
   async function login(username, password) {
+    // 先清除旧的认证信息，避免旧 token 干扰
+    logout()
+
     const res = await request.post('/auth/login', { username, password })
 
     token.value = res.data.token
