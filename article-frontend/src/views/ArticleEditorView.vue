@@ -37,13 +37,36 @@
         </el-form-item>
 
         <el-form-item label="内容" prop="content">
-          <el-input
-            v-model="form.content"
-            type="textarea"
-            :rows="16"
-            placeholder="请输入文章内容..."
-            class="article-content"
-          />
+          <!-- Markdown 工具栏 -->
+          <div class="md-toolbar">
+            <button type="button" class="md-btn" title="加粗" @click="insertMd('**', '**')">B</button>
+            <button type="button" class="md-btn" title="斜体" @click="insertMd('*', '*')"><em>I</em></button>
+            <button type="button" class="md-btn" title="删除线" @click="insertMd('~~', '~~')"><s>S</s></button>
+            <span class="md-sep">|</span>
+            <button type="button" class="md-btn" title="标题" @click="insertMd('\n## ', '\n')">H</button>
+            <button type="button" class="md-btn" title="引用" @click="insertMd('\n> ', '\n')">Q</button>
+            <button type="button" class="md-btn" title="代码块" @click="insertMd('\n```\n', '\n```\n')">&lt;/&gt;</button>
+            <button type="button" class="md-btn" title="链接" @click="insertMd('[', '](url)')">Link</button>
+            <button type="button" class="md-btn" title="图片" @click="insertMd('![alt](', ')')">Img</button>
+            <button type="button" class="md-btn" title="无序列表" @click="insertMd('\n- ', '\n')">UL</button>
+            <button type="button" class="md-btn" title="有序列表" @click="insertMd('\n1. ', '\n')">OL</button>
+            <span class="md-sep">|</span>
+            <button type="button" class="md-btn preview-toggle" :class="{ active: showPreview }" @click="showPreview = !showPreview">
+              预览
+            </button>
+          </div>
+          <div class="md-editor-row">
+            <el-input
+              ref="contentInput"
+              v-model="form.content"
+              type="textarea"
+              :rows="18"
+              placeholder="支持 Markdown 语法，输入文章内容..."
+              class="article-content"
+              @input="updatePreview"
+            />
+            <div v-if="showPreview" class="md-preview" v-html="previewHtml"></div>
+          </div>
         </el-form-item>
 
         <el-form-item label="状态">
@@ -67,17 +90,23 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Plus } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
-import { getCategories, getArticleDetail, createArticle, updateArticle, uploadImage } from '../api/article'
+import MarkdownIt from 'markdown-it'
+import { getCategories, getArticleDetail, createArticle, updateArticle } from '../api/article'
+
+const md = new MarkdownIt({ html: false, linkify: true, typographer: true })
 
 const route = useRoute()
 const router = useRouter()
 const formRef = ref()
 const saving = ref(false)
 const categories = ref([])
+const showPreview = ref(false)
+const previewHtml = ref('')
+const contentInput = ref()
 
 const isEdit = computed(() => !!route.params.id)
 const articleId = computed(() => route.params.id)
@@ -118,11 +147,35 @@ onMounted(async () => {
         cover: detail.data.cover,
         status: detail.data.status,
       })
+      updatePreview()
     } catch (err) {
       console.error('加载文章失败:', err)
     }
   }
 })
+
+function updatePreview() {
+  previewHtml.value = form.content ? md.render(form.content) : ''
+}
+
+function insertMd(before, after) {
+  const textarea = contentInput.value?.$el?.querySelector('textarea')
+  if (!textarea) return
+
+  const start = textarea.selectionStart
+  const end = textarea.selectionEnd
+  const selected = form.content.substring(start, end)
+  const replacement = before + selected + after
+
+  form.content = form.content.substring(0, start) + replacement + form.content.substring(end)
+  updatePreview()
+
+  nextTick(() => {
+    textarea.focus()
+    const cursorPos = start + before.length + selected.length
+    textarea.setSelectionRange(cursorPos, cursorPos)
+  })
+}
 
 function handleCoverSuccess(res) {
   if (res.success) {
@@ -159,7 +212,7 @@ async function handleSubmit(statusOverride) {
 
 <style lang="scss" scoped>
 .editor-view {
-  max-width: 900px;
+  max-width: 960px;
   margin: 0 auto;
 }
 
@@ -231,12 +284,99 @@ async function handleSubmit(statusOverride) {
   color: #8e8ea0;
 }
 
+.md-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin-bottom: 8px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 8px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.md-btn {
+  padding: 4px 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 13px;
+  color: #555;
+  border-radius: 4px;
+  transition: all 0.15s;
+  font-weight: 500;
+
+  &:hover {
+    background: rgba(45, 106, 79, 0.08);
+    color: #2d6a4f;
+  }
+
+  &.preview-toggle.active {
+    background: #2d6a4f;
+    color: #fff;
+  }
+}
+
+.md-sep {
+  color: #d0d0d8;
+  margin: 0 4px;
+  font-size: 12px;
+}
+
+.md-editor-row {
+  display: flex;
+  gap: 0;
+}
+
 .article-content {
+  flex: 1;
+
   :deep(.el-textarea__inner) {
     font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
     line-height: 1.8;
     font-size: 14px;
     border-radius: 8px;
+    border-top-right-radius: 0;
+  }
+}
+
+.md-preview {
+  flex: 1;
+  padding: 16px 20px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-left: none;
+  border-radius: 0 8px 8px 0;
+  background: #fafafa;
+  overflow-y: auto;
+  max-height: 440px;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #333;
+
+  :deep(h1), :deep(h2), :deep(h3) {
+    color: #2d6a4f;
+    margin-top: 0.8em;
+    margin-bottom: 0.4em;
+  }
+  :deep(code) {
+    background: rgba(45, 106, 79, 0.06);
+    padding: 2px 4px;
+    border-radius: 3px;
+    font-size: 0.9em;
+  }
+  :deep(pre) {
+    background: #1e1e2e;
+    border-radius: 6px;
+    padding: 12px;
+    overflow-x: auto;
+    code { background: none; color: #cdd6f4; }
+  }
+  :deep(blockquote) {
+    border-left: 3px solid #2d6a4f;
+    padding: 0.3em 1em;
+    margin: 0.5em 0;
+    background: rgba(45, 106, 79, 0.04);
+    border-radius: 0 4px 4px 0;
   }
 }
 

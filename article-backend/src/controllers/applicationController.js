@@ -6,6 +6,7 @@ const {
   NotFoundError,
   ConflictError,
 } = require('../utils/errors')
+const { createNotification } = require('./notificationController')
 
 // ========== 提交角色申请 ==========
 async function applyRole(req, res) {
@@ -164,6 +165,17 @@ async function reviewApplication(req, res) {
         })
       }
       await prisma.$disconnect()
+
+      // 发送通知
+      await createNotification({
+        userId: application.userId,
+        type: status === 'approved' ? 'application_approved' : 'application_rejected',
+        title: status === 'approved' ? '角色申请已通过' : '角色申请未通过',
+        content: status === 'approved'
+          ? `你申请成为${application.toRole}的请求已通过审核，现在可以发布文章了。`
+          : `你申请成为${application.toRole}的请求未通过审核。${reviewNote ? '原因：' + reviewNote : ''}`,
+      })
+
       return res.json({ success: true, message: status === 'approved' ? '已批准申请' : '已拒绝申请', data: updated })
     }
 
@@ -185,6 +197,16 @@ async function reviewApplication(req, res) {
         user.updatedAt = new Date().toISOString()
       }
     }
+
+    // 发送通知
+    createNotification({
+      userId: application.userId,
+      type: status === 'approved' ? 'application_approved' : 'application_rejected',
+      title: status === 'approved' ? '角色申请已通过' : '角色申请未通过',
+      content: status === 'approved'
+        ? `你申请成为${application.toRole}的请求已通过审核。`
+        : `你申请成为${application.toRole}的请求未通过审核。${reviewNote ? '原因：' + reviewNote : ''}`,
+    })
 
     return res.json({ success: true, message: status === 'approved' ? '已批准申请' : '已拒绝申请', data: application })
   } catch (err) {

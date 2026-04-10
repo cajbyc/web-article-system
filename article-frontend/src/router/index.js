@@ -57,6 +57,11 @@ const routes = [
         component: () => import('../views/ArticleDetailView.vue'),
       },
       {
+        path: 'user/:id',
+        name: 'UserProfile',
+        component: () => import('../views/UserProfileView.vue'),
+      },
+      {
         path: 'my/articles',
         name: 'MyArticles',
         component: () => import('../views/MyArticlesView.vue'),
@@ -121,6 +126,12 @@ const routes = [
         path: 'admin/applications',
         name: 'AdminApplications',
         component: () => import('../views/ApplicationsView.vue'),
+        meta: { requiresAuth: true, requiresAdmin: true },
+      },
+      {
+        path: 'admin/categories',
+        name: 'AdminCategories',
+        component: () => import('../views/CategoryManageView.vue'),
         meta: { requiresAuth: true, requiresAdmin: true },
       },
     ],

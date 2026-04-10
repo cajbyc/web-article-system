@@ -316,4 +316,34 @@ async function changePassword(req, res) {
   }
 }
 
-module.exports = { register, login, getCurrentUser, updateProfile, changePassword }
+// ========== 获取用户公开资料 ==========
+async function getUserPublicProfile(req, res) {
+  try {
+    const userId = parseInt(req.params.id)
+
+    if (dbAvailable) {
+      const prisma = getPrisma()
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: { id: true, username: true, nickname: true, avatar: true, role: true, createdAt: true },
+      })
+      if (!user) { await prisma.$disconnect(); return res.status(404).json({ success: false, message: '用户不存在' }) }
+
+      const articleCount = await prisma.article.count({ where: { userId, status: 'published' } })
+      await prisma.$disconnect()
+      return res.json({ success: true, data: { ...user, articleCount } })
+    }
+
+    // 内存模式
+    const user = mockUsers.find(u => u.id === userId)
+    if (!user) return res.status(404).json({ success: false, message: '用户不存在' })
+    const { password: _, email, status, ...info } = user
+    const articleCount = mockArticles.filter(a => a.userId === userId && a.status === 'published').length
+    return res.json({ success: true, data: { ...info, articleCount } })
+  } catch (err) {
+    console.error('【获取用户公开资料错误】', err)
+    res.status(500).json({ success: false, message: '服务器内部错误' })
+  }
+}
+
+module.exports = { register, login, getCurrentUser, updateProfile, changePassword, getUserPublicProfile }

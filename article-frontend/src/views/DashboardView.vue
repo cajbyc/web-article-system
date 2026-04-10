@@ -53,6 +53,14 @@
             <span class="qb-icon">📋</span>
             <span>操作日志</span>
           </button>
+          <button class="quick-btn" @click="$router.push('/admin/categories')">
+            <span class="qb-icon">📂</span>
+            <span>分类管理</span>
+          </button>
+          <button class="quick-btn" @click="$router.push('/admin/applications')">
+            <span class="qb-icon">✅</span>
+            <span>角色审批</span>
+          </button>
         </div>
       </div>
     </div>

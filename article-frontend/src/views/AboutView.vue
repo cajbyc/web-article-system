@@ -72,7 +72,7 @@
         </el-collapse>
       </section>
 
-      <div class="about-footer">&copy; 2026 墨笔文章系统</div>
+      <div class="about-footer">&copy; 2026 随笔文章系统</div>
     </div>
   </div>
 </template>

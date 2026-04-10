@@ -5,6 +5,7 @@ const {
   NotFoundError,
 } = require('../utils/errors')
 const { mockUsers, mockArticles, mockLikes, mockCollects, mockComments, getNextCommentId } = require('../utils/mockData')
+const { createNotification } = require('./notificationController')
 
 // 辅助：从 mockUsers 中查找用户并过滤敏感字段
 function findSafeUser(userId) {
@@ -255,6 +256,19 @@ async function createComment(req, res) {
         include: { user: { select: { id: true, nickname: true, username: true, avatar: true } } },
       })
       await prisma.$disconnect()
+
+      // 通知文章作者（不通知自己）
+      if (article.userId !== userId) {
+        const commenter = comment.user?.nickname || comment.user?.username || '有人'
+        createNotification({
+          userId: article.userId,
+          type: 'comment_reply',
+          title: '文章收到新评论',
+          content: `${commenter} 评论了你的文章「${article.title}」：${content.trim().slice(0, 50)}${content.trim().length > 50 ? '...' : ''}`,
+          relatedId: articleId,
+        })
+      }
+
       return res.status(201).json({ success: true, message: '评论成功', data: comment })
     }
 
@@ -264,6 +278,18 @@ async function createComment(req, res) {
     const user = findSafeUser(userId)
     const comment = { id: getNextCommentId(), articleId, userId, content: content.trim(), createdAt: new Date().toISOString(), user }
     mockComments.push({ id: comment.id, articleId, userId, content: comment.content, createdAt: comment.createdAt })
+
+    // 通知文章作者（不通知自己）
+    if (article.userId !== userId) {
+      createNotification({
+        userId: article.userId,
+        type: 'comment_reply',
+        title: '文章收到新评论',
+        content: `${user.nickname || user.username} 评论了你的文章「${article.title}」：${content.trim().slice(0, 50)}`,
+        relatedId: articleId,
+      })
+    }
+
     return res.status(201).json({ success: true, message: '评论成功', data: comment })
   } catch (err) {
     console.error('【发表评论错误】', err)

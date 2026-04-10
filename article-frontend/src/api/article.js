@@ -55,6 +55,16 @@ export function getPublicStats() {
   return request.get('/articles/stats')
 }
 
+// ========== 某用户的公开文章 ==========
+export function getUserArticles(userId, params) {
+  return request.get(`/articles/user/${userId}`, { params })
+}
+
+// ========== 获取用户公开资料 ==========
+export function getUserProfile(userId) {
+  return request.get(`/auth/user/${userId}`)
+}
+
 // ========== 图片上传 ==========
 export function uploadImage(file) {
   const formData = new FormData()

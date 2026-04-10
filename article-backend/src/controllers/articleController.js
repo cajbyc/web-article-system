@@ -20,6 +20,7 @@ async function getArticleList(req, res) {
     const categoryId = req.query.categoryId ? parseInt(req.query.categoryId) : null
     const keyword = req.query.keyword || ''
     const status = req.query.status || ''
+    const sort = req.query.sort || 'newest'
 
     if (dbAvailable) {
       const prisma = getPrisma()
@@ -35,11 +36,15 @@ async function getArticleList(req, res) {
       if (categoryId) where.categoryId = categoryId
       if (keyword) where.OR = [{ title: { contains: keyword } }, { content: { contains: keyword } }]
 
+      const orderBy = sort === 'views' ? { viewCount: 'desc' }
+                    : sort === 'likes' ? { likeCount: 'desc' }
+                    : { createdAt: 'desc' }
+
       const [articles, total] = await Promise.all([
         prisma.article.findMany({
           where,
           include: { category: true, user: { select: { id: true, nickname: true, username: true } } },
-          orderBy: { createdAt: 'desc' },
+          orderBy,
           skip: (page - 1) * pageSize,
           take: pageSize,
         }),
@@ -57,6 +62,11 @@ async function getArticleList(req, res) {
     }
     if (categoryId) filtered = filtered.filter(a => a.categoryId === categoryId)
     if (keyword) filtered = filtered.filter(a => a.title.includes(keyword) || a.content.includes(keyword))
+
+    // 排序
+    if (sort === 'views') filtered.sort((a, b) => (b.viewCount || 0) - (a.viewCount || 0))
+    else if (sort === 'likes') filtered.sort((a, b) => (b.likeCount || 0) - (a.likeCount || 0))
+    else filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
 
     const start = (page - 1) * pageSize
     const list = filtered.slice(start, start + pageSize).map(
@@ -449,7 +459,137 @@ async function getPublicStats(req, res) {
   }
 }
 
+// ========== 分类管理（管理员）==========
+async function createCategory(req, res) {
+  try {
+    const { name, sort } = req.body
+    if (!name || !name.trim()) return res.status(400).json({ success: false, message: '分类名称不能为空' })
+
+    if (dbAvailable) {
+      const prisma = getPrisma()
+      const existing = await prisma.category.findUnique({ where: { name: name.trim() } })
+      if (existing) { await prisma.$disconnect(); return res.status(400).json({ success: false, message: '分类名称已存在' }) }
+
+      const cat = await prisma.category.create({ data: { name: name.trim(), sort: sort || 0 } })
+      await prisma.$disconnect()
+      return res.status(201).json({ success: true, message: '分类创建成功', data: cat })
+    }
+
+    // 内存模式
+    if (mockCategories.find(c => c.name === name.trim())) {
+      return res.status(400).json({ success: false, message: '分类名称已存在' })
+    }
+    const cat = { id: Math.max(...mockCategories.map(c => c.id), 0) + 1, name: name.trim(), sort: sort || 0, articleCount: 0 }
+    mockCategories.push(cat)
+    return res.status(201).json({ success: true, message: '分类创建成功', data: cat })
+  } catch (err) {
+    console.error('【创建分类错误】', err)
+    res.status(500).json({ success: false, message: '服务器内部错误' })
+  }
+}
+
+async function updateCategory(req, res) {
+  try {
+    const id = parseInt(req.params.id)
+    const { name, sort } = req.body
+
+    if (dbAvailable) {
+      const prisma = getPrisma()
+      const cat = await prisma.category.findUnique({ where: { id } })
+      if (!cat) { await prisma.$disconnect(); return res.status(404).json({ success: false, message: '分类不存在' }) }
+
+      if (name && name.trim() !== cat.name) {
+        const dup = await prisma.category.findUnique({ where: { name: name.trim() } })
+        if (dup) { await prisma.$disconnect(); return res.status(400).json({ success: false, message: '分类名称已存在' }) }
+      }
+
+      const updateData = {}
+      if (name !== undefined) updateData.name = name.trim()
+      if (sort !== undefined) updateData.sort = sort
+      const updated = await prisma.category.update({ where: { id }, data: updateData })
+      await prisma.$disconnect()
+      return res.json({ success: true, message: '分类更新成功', data: updated })
+    }
+
+    const idx = mockCategories.findIndex(c => c.id === id)
+    if (idx === -1) return res.status(404).json({ success: false, message: '分类不存在' })
+    if (name !== undefined) mockCategories[idx].name = name.trim()
+    if (sort !== undefined) mockCategories[idx].sort = sort
+    return res.json({ success: true, message: '分类更新成功', data: mockCategories[idx] })
+  } catch (err) {
+    console.error('【更新分类错误】', err)
+    res.status(500).json({ success: false, message: '服务器内部错误' })
+  }
+}
+
+async function deleteCategory(req, res) {
+  try {
+    const id = parseInt(req.params.id)
+
+    if (dbAvailable) {
+      const prisma = getPrisma()
+      const cat = await prisma.category.findUnique({ where: { id } })
+      if (!cat) { await prisma.$disconnect(); return res.status(404).json({ success: false, message: '分类不存在' }) }
+
+      const articleCount = await prisma.article.count({ where: { categoryId: id } })
+      if (articleCount > 0) { await prisma.$disconnect(); return res.status(400).json({ success: false, message: `该分类下有 ${articleCount} 篇文章，无法删除` }) }
+
+      await prisma.category.delete({ where: { id } })
+      await prisma.$disconnect()
+      return res.json({ success: true, message: '分类已删除' })
+    }
+
+    const idx = mockCategories.findIndex(c => c.id === id)
+    if (idx === -1) return res.status(404).json({ success: false, message: '分类不存在' })
+    const hasArticles = mockArticles.some(a => a.categoryId === id)
+    if (hasArticles) return res.status(400).json({ success: false, message: '该分类下有文章，无法删除' })
+    mockCategories.splice(idx, 1)
+    return res.json({ success: true, message: '分类已删除' })
+  } catch (err) {
+    console.error('【删除分类错误】', err)
+    res.status(500).json({ success: false, message: '服务器内部错误' })
+  }
+}
+
+// ========== 获取某用户的公开文章 ==========
+async function getUserArticles(req, res) {
+  try {
+    const userId = parseInt(req.params.id)
+    const page = parseInt(req.query.page) || 1
+    const pageSize = parseInt(req.query.pageSize) || 10
+
+    if (dbAvailable) {
+      const prisma = getPrisma()
+      const where = { userId, status: 'published' }
+      const [articles, total] = await Promise.all([
+        prisma.article.findMany({
+          where,
+          include: { category: true },
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * pageSize,
+          take: pageSize,
+        }),
+        prisma.article.count({ where }),
+      ])
+      await prisma.$disconnect()
+      return res.json({ success: true, data: { list: articles, total, page, pageSize } })
+    }
+
+    // 内存模拟
+    const filtered = mockArticles.filter(a => a.userId === userId && a.status === 'published')
+    const start = (page - 1) * pageSize
+    return res.json({
+      success: true,
+      data: { list: filtered.slice(start, start + pageSize).map(a => enrichArticle(a, mockCategories, mockUsers)), total: filtered.length, page, pageSize },
+    })
+  } catch (err) {
+    console.error('【获取用户文章错误】', err)
+    res.status(500).json({ success: false, message: '服务器内部错误' })
+  }
+}
+
 module.exports = {
   getArticleList, getArticleById, createArticle, updateArticle, deleteArticle,
   getMyArticles, getRecycleBin, restoreArticle, permanentDelete, getCategories, getPublicStats,
+  getUserArticles, createCategory, updateCategory, deleteCategory,
 }

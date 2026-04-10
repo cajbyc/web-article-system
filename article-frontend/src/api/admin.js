@@ -44,3 +44,16 @@ export function batchDeleteComments(ids) {
 export function getOperationLogs(params) {
   return request.get('/admin/logs', { params })
 }
+
+// ==================== 分类管理 ====================
+export function createCategory(data) {
+  return request.post('/articles/categories', data)
+}
+
+export function updateCategory(id, data) {
+  return request.put(`/articles/categories/${id}`, data)
+}
+
+export function deleteCategory(id) {
+  return request.delete(`/articles/categories/${id}`)
+}

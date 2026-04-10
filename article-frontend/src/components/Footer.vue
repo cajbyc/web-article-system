@@ -3,7 +3,7 @@
     <div class="footer-inner">
       <div class="footer-top">
         <div class="footer-brand">
-          <span class="brand-name">墨笔</span>
+          <span class="brand-name">随笔</span>
           <span class="brand-desc">多角色文章管理系统</span>
         </div>
         <div class="footer-links">
@@ -12,7 +12,7 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <span>&copy; 2026 墨笔文章系统</span>
+        <span>&copy; 2026 随笔文章系统</span>
       </div>
     </div>
   </footer>

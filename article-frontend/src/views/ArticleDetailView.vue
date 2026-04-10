@@ -13,7 +13,7 @@
         {{ statusLabel(article.status) }}
       </el-tag>
       <div class="article-meta">
-        <div class="meta-author">
+        <div class="meta-author" @click="goUserProfile">
           <el-avatar :size="28">{{ (article.authorName || article.author || '?').charAt(0) }}</el-avatar>
           <span class="author-name">{{ article.authorName || article.author }}</span>
         </div>
@@ -52,6 +52,11 @@
         <span class="action-icon">{{ isCollected ? '⭐' : '☆' }}</span>
         <span class="action-text">{{ isCollected ? '已收藏' : '收藏' }}</span>
         <span class="action-count" v-if="collectCount">{{ collectCount }}</span>
+      </button>
+
+      <button class="action-btn" @click="handleShare">
+        <span class="action-icon">🔗</span>
+        <span class="action-text">分享</span>
       </button>
     </div>
 
@@ -130,8 +135,10 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import MarkdownIt from 'markdown-it'
+import hljs from 'highlight.js'
 
 import { getArticleDetail } from '../api/article'
 import {
@@ -143,7 +150,20 @@ import {
 } from '../api/interaction'
 import { useUserStore } from '../stores/user'
 
+const md = new MarkdownIt({
+  html: false,
+  linkify: true,
+  typographer: true,
+  highlight(str, lang) {
+    if (lang && hljs.getLanguage(lang)) {
+      try { return hljs.highlight(str, { language: lang }).value } catch {}
+    }
+    return ''
+  },
+})
+
 const route = useRoute()
+const router = useRouter()
 const userStore = useUserStore()
 const article = ref(null)
 
@@ -208,6 +228,36 @@ async function handleToggleCollect() {
   }
 }
 
+function handleShare() {
+  const url = window.location.href
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(url).then(() => {
+      ElMessage.success('链接已复制到剪贴板')
+    }).catch(() => {
+      fallbackCopy(url)
+    })
+  } else {
+    fallbackCopy(url)
+  }
+}
+
+function fallbackCopy(text) {
+  const ta = document.createElement('textarea')
+  ta.value = text
+  ta.style.position = 'fixed'
+  ta.style.opacity = '0'
+  document.body.appendChild(ta)
+  ta.select()
+  document.execCommand('copy')
+  document.body.removeChild(ta)
+  ElMessage.success('链接已复制到剪贴板')
+}
+
+function goUserProfile() {
+  const userId = article.value?.userId || article.value?.user?.id
+  if (userId) router.push(`/user/${userId}`)
+}
+
 async function fetchComments() {
   commentLoading.value = true
   try {
@@ -267,7 +317,7 @@ async function handleDeleteComment(comment) {
 
 function formatContent(content) {
   if (!content) return ''
-  return content.replace(/\n/g, '<br/>')
+  return md.render(content)
 }
 
 function formatTime(timeStr) {
@@ -311,7 +361,7 @@ function statusLabel(status) {
 .article-title {
   font-size: 28px;
   font-weight: 700;
-  color: #1a1a2e;
+  color: #2d6a4f;
   line-height: 1.3;
   letter-spacing: -0.5px;
   margin-bottom: 12px;
@@ -320,7 +370,7 @@ function statusLabel(status) {
 .article-meta {
   display: flex;
   align-items: center;
-  color: #8e8ea0;
+  color: #999;
   font-size: 13px;
   flex-wrap: wrap;
   gap: 0;
@@ -334,12 +384,15 @@ function statusLabel(status) {
   .author-name {
     color: #2d6a4f;
     font-weight: 500;
+    cursor: pointer;
+
+    &:hover { text-decoration: underline; }
   }
 }
 
 .meta-divider {
   margin: 0 10px;
-  color: #d0d0d8;
+  color: #ccc;
 }
 
 .meta-text {
@@ -370,6 +423,80 @@ function statusLabel(status) {
   color: #1a1a2e;
   padding: 24px 0;
   max-width: 720px;
+
+  :deep(h1), :deep(h2), :deep(h3), :deep(h4) {
+    color: #2d6a4f;
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-weight: 700;
+  }
+  :deep(h1) { font-size: 1.6em; }
+  :deep(h2) { font-size: 1.35em; border-bottom: 1px solid rgba(0,0,0,0.06); padding-bottom: 0.3em; }
+  :deep(h3) { font-size: 1.15em; }
+  :deep(p) { margin: 0.8em 0; }
+  :deep(ul), :deep(ol) { padding-left: 1.6em; margin: 0.6em 0; }
+  :deep(li) { margin: 0.25em 0; }
+  :deep(blockquote) {
+    border-left: 3px solid #2d6a4f;
+    padding: 0.5em 1em;
+    margin: 1em 0;
+    background: rgba(45, 106, 79, 0.04);
+    border-radius: 0 6px 6px 0;
+    color: #555;
+  }
+  :deep(code) {
+    background: rgba(45, 106, 79, 0.06);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 0.9em;
+    font-family: 'Menlo', 'Consolas', monospace;
+    color: #2d6a4f;
+  }
+  :deep(pre) {
+    background: #1e1e2e;
+    border-radius: 8px;
+    padding: 16px;
+    overflow-x: auto;
+    margin: 1em 0;
+    line-height: 1.6;
+
+    code {
+      background: none;
+      padding: 0;
+      color: #cdd6f4;
+      font-size: 0.85em;
+    }
+  }
+  :deep(img) {
+    max-width: 100%;
+    border-radius: 8px;
+    margin: 1em 0;
+  }
+  :deep(a) {
+    color: #2d6a4f;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+  :deep(table) {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+
+    th, td {
+      border: 1px solid rgba(0,0,0,0.1);
+      padding: 8px 12px;
+      text-align: left;
+    }
+    th {
+      background: rgba(45, 106, 79, 0.06);
+      font-weight: 600;
+    }
+  }
+  :deep(hr) {
+    border: none;
+    border-top: 1px solid rgba(0,0,0,0.08);
+    margin: 2em 0;
+  }
 }
 
 // ===== 互动栏 =====
@@ -502,11 +629,11 @@ function statusLabel(status) {
       color: #2d6a4f;
     }
 
-    .time {
-      font-size: 12px;
-      color: #b8b8c8;
-      margin-top: 2px;
-    }
+  .time {
+    font-size: 12px;
+    color: #aaa;
+    margin-top: 2px;
+  }
   }
 }
 
