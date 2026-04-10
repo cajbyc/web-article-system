@@ -46,9 +46,9 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', require('./routes/auth'))
 app.use('/api/articles', require('./routes/article'))
 app.use('/api/upload', require('./routes/upload'))
-app.use('/api/likes', require('./routes/interaction'))
-app.use('/api/collects', require('./routes/interaction'))
-app.use('/api/comments', require('./routes/interaction'))
+app.use('/api/likes', require('./routes/likes'))
+app.use('/api/collects', require('./routes/collects'))
+app.use('/api/comments', require('./routes/comments'))
 app.use('/api/admin', require('./routes/admin'))
 
 // ========== 统一异常处理中间件 ==========
