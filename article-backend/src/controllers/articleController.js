@@ -1,37 +1,5 @@
 const { getPrisma, dbAvailable } = require('../utils/prisma')
-
-// ========== 内存模拟数据 ==========
-let mockCategories = [
-  { id: 1, name: '学习笔记', sort: 1 },
-  { id: 2, name: '课程报告', sort: 2 },
-  { id: 3, name: '技术分享', sort: 3 },
-  { id: 4, name: '校园随笔', sort: 4 },
-  { id: 5, name: '学术交流', sort: 5 },
-]
-
-let mockArticles = [
-  {
-    id: 1, title: 'Vue3 组合式 API 完全指南', content: '深入理解 Vue3 的 Composition API...',
-    cover: null, categoryId: 3, status: 'published',
-    viewCount: 128, likeCount: 15, collectCount: 8,
-    userId: 1, createdAt: '2026-04-08T10:00:00Z', updatedAt: '2026-04-08T10:00:00Z',
-  },
-  {
-    id: 2, title: 'Pinia 状态管理最佳实践', content: 'Pinia 是 Vue3 官方推荐的状态管理库...',
-    cover: null, categoryId: 3, status: 'published',
-    viewCount: 96, likeCount: 8, collectCount: 4,
-    userId: 2, createdAt: '2026-04-07T14:30:00Z', updatedAt: '2026-04-07T14:30:00Z',
-  },
-  {
-    id: 3, title: 'Element Plus 组件库使用技巧', content: '汇总 Element Plus 中常用组件的使用技巧...',
-    cover: null, categoryId: 1, status: 'published',
-    viewCount: 74, likeCount: 5, collectCount: 2,
-    userId: 3, createdAt: '2026-04-06T09:20:00Z', updatedAt: '2026-04-06T09:20:00Z',
-  },
-]
-
-let nextArticleId = 4
-const mockRecycleBin = []
+const { mockCategories, mockArticles, mockUsers, mockRecycleBin, getNextArticleId, mockLikes, mockCollects, mockComments } = require('../utils/mockData')
 
 // ========== 辅助：构建文章响应（附加分类名和作者信息） ==========
 function enrichArticle(article, categories, users) {
@@ -92,7 +60,7 @@ async function getArticleList(req, res) {
 
     const start = (page - 1) * pageSize
     const list = filtered.slice(start, start + pageSize).map(
-      a => enrichArticle(a, mockCategories)
+      a => enrichArticle(a, mockCategories, mockUsers)
     )
 
     return res.json({
@@ -144,9 +112,11 @@ async function getArticleById(req, res) {
     if (!article) return res.status(404).json({ success: false, message: '文章不存在' })
 
     article.viewCount++
+    const isLiked = req.user ? mockLikes.has(`${req.user.id}-${id}`) : false
+    const isCollected = req.user ? mockCollects.has(`${req.user.id}-${id}`) : false
     return res.json({
       success: true,
-      data: { ...enrichArticle(article, mockCategories), isLiked: false, isCollected: false },
+      data: { ...enrichArticle(article, mockCategories, mockUsers), isLiked, isCollected },
     })
   } catch (err) {
     console.error('【获取文章详情错误】', err)
@@ -185,7 +155,7 @@ async function createArticle(req, res) {
 
     const now = new Date().toISOString()
     const article = {
-      id: nextArticleId++, title: title.trim(), content,
+      id: getNextArticleId(), title: title.trim(), content,
       cover: cover || null, categoryId: parseInt(categoryId), status: status || 'draft',
       viewCount: 0, likeCount: 0, collectCount: 0,
       userId, createdAt: now, updatedAt: now,
@@ -194,7 +164,7 @@ async function createArticle(req, res) {
 
     return res.status(201).json({
       success: true, message: '发布成功',
-      data: enrichArticle(article, mockCategories),
+      data: enrichArticle(article, mockCategories, mockUsers),
     })
   } catch (err) {
     console.error('【创建文章错误】', err)
@@ -246,7 +216,7 @@ async function updateArticle(req, res) {
     if (status !== undefined) art.status = status
     art.updatedAt = new Date().toISOString()
 
-    return res.json({ success: true, message: '更新成功', data: enrichArticle(art, mockCategories) })
+    return res.json({ success: true, message: '更新成功', data: enrichArticle(art, mockCategories, mockUsers) })
   } catch (err) {
     console.error('【更新文章错误】', err)
     res.status(500).json({ success: false, message: '服务器内部错误' })
@@ -330,7 +300,7 @@ async function getMyArticles(req, res) {
     return res.json({
       success: true,
       data: {
-        list: filtered.slice(start, start + pageSize).map(a => enrichArticle(a, mockCategories)),
+        list: filtered.slice(start, start + pageSize).map(a => enrichArticle(a, mockCategories, mockUsers)),
         total: filtered.length, page, pageSize,
       },
     })
@@ -397,7 +367,7 @@ async function restoreArticle(req, res) {
     if (mockRecycleBin[idx].userId !== req.user.id) return res.status(403).json({ success: false, message: '无权操作' })
 
     const item = mockRecycleBin.splice(idx, 1)[0]
-    const restored = { ...item, id: nextArticleId++, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+    const restored = { ...item, id: getNextArticleId(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
     delete restored.articleId; delete restored.deleteAt
     mockArticles.push(restored)
     return res.json({ success: true, message: '恢复成功', data: restored })
@@ -469,8 +439,8 @@ async function getPublicStats(req, res) {
       success: true,
       data: {
         articleCount: mockArticles.filter(a => a.status === 'published').length,
-        userCount: 1,
-        commentCount: 0,
+        userCount: mockUsers.length,
+        commentCount: mockComments.length,
         likeCount: mockArticles.reduce((s, a) => s + (a.likeCount || 0), 0),
       },
     })

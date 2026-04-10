@@ -4,27 +4,15 @@ const {
   ForbiddenError,
   NotFoundError,
 } = require('../utils/errors')
+const { mockUsers, mockArticles, mockLikes, mockCollects, mockComments, getNextCommentId } = require('../utils/mockData')
 
-// ========== 内存模拟数据 ==========
-const mockUsers = [
-  { id: 1, username: 'admin', nickname: '管理员', avatar: null, role: 'admin' },
-  { id: 2, username: 'editor01', nickname: '编辑小明', avatar: null, role: 'editor' },
-  { id: 3, username: 'author01', nickname: '作者小红', avatar: null, role: 'author' },
-]
-const mockArticles = [
-  { id: 1, title: 'Vue3 组合式 API 完全指南', likeCount: 15, collectCount: 8 },
-  { id: 2, title: 'Pinia 状态管理最佳实践', likeCount: 8, collectCount: 4 },
-  { id: 3, title: 'Element Plus 组件库使用技巧', likeCount: 5, collectCount: 2 },
-]
-const mockLikes = new Set(['2-1', '3-1', '1-2'])
-const mockCollects = new Set(['2-1', '1-1'])
-let nextCommentId = 1
-const mockComments = [
-  { id: 1, articleId: 1, userId: 2, content: '写得非常清晰！', createdAt: '2026-04-08T12:00:00Z' },
-  { id: 2, articleId: 1, userId: 3, content: '组合式 API 确实更灵活', createdAt: '2026-04-08T13:30:00Z' },
-  { id: 3, articleId: 2, userId: 1, content: 'Pinia 的 TS 支持很好', createdAt: '2026-04-07T16:00:00Z' },
-  { id: 4, articleId: 1, userId: 1, content: 'script setup 更简洁', createdAt: '2026-04-08T14:20:00Z' },
-]
+// 辅助：从 mockUsers 中查找用户并过滤敏感字段
+function findSafeUser(userId) {
+  const u = mockUsers.find(u => u.id === userId)
+  if (!u) return { id: userId, username: `用户${userId}`, nickname: `用户${userId}`, avatar: null }
+  const { password, email, status, ...safe } = u
+  return safe
+}
 
 // ============================================================
 //  点赞功能
@@ -273,8 +261,8 @@ async function createComment(req, res) {
     const article = mockArticles.find(a => a.id === articleId)
     if (!article) throw new NotFoundError('文章不存在或已删除')
 
-    const user = mockUsers.find(u => u.id === userId) || { id: userId, username: `用户${userId}`, nickname: `用户${userId}`, avatar: null }
-    const comment = { id: nextCommentId++, articleId, userId, content: content.trim(), createdAt: new Date().toISOString(), user }
+    const user = findSafeUser(userId)
+    const comment = { id: getNextCommentId(), articleId, userId, content: content.trim(), createdAt: new Date().toISOString(), user }
     mockComments.push({ id: comment.id, articleId, userId, content: comment.content, createdAt: comment.createdAt })
     return res.status(201).json({ success: true, message: '评论成功', data: comment })
   } catch (err) {
@@ -306,7 +294,7 @@ async function getComments(req, res) {
     const filtered = mockComments.filter(c => c.articleId === parseInt(articleId))
     const total = filtered.length
     const start = (p - 1) * ps
-    return res.json({ success: true, data: { list: filtered.slice(start, start + ps).reverse().map(c => ({ ...c, user: mockUsers.find(u => u.id === c.userId) || { id: c.userId, nickname: `用户${c.userId}`, avatar: null } })), total, page: p, pageSize: ps } })
+    return res.json({ success: true, data: { list: filtered.slice(start, start + ps).reverse().map(c => ({ ...c, user: findSafeUser(c.userId) })), total, page: p, pageSize: ps } })
   } catch (err) {
     console.error('【获取评论列表错误】', err)
     throw err
@@ -372,7 +360,7 @@ async function getMyComments(req, res) {
     const myComments = mockComments.filter(c => c.userId === userId)
     const total = myComments.length
     const start = (page - 1) * pageSize
-    return res.json({ success: true, data: { list: myComments.slice(start, start + pageSize).map(c => ({ ...c, article: mockArticles.find(a => a.id === c.articleId) || { id: c.articleId, title: '未知文章' }, user: mockUsers.find(u => u.id === c.userId) || { id: c.userId, nickname: `用户${c.userId}`, avatar: null } })), total, page, pageSize } })
+    return res.json({ success: true, data: { list: myComments.slice(start, start + pageSize).map(c => ({ ...c, article: mockArticles.find(a => a.id === c.articleId) || { id: c.articleId, title: '未知文章' }, user: findSafeUser(c.userId) })), total, page, pageSize } })
   } catch (err) {
     console.error('【我的评论列表错误】', err)
     throw err

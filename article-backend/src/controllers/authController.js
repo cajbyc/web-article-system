@@ -42,25 +42,8 @@ function clearLoginAttempts(username) {
   loginAttempts.delete(username)
 }
 
-// ========== 内存模拟数据（数据库不可用时使用） ==========
-let mockUsers = [
-  {
-    id: 1,
-    username: 'admin',
-    password: '$2a$10$MOCK_HASHED_PASSWORD_FOR_ADMIN',
-    nickname: '管理员',
-    email: 'admin@test.com',
-    avatar: null,
-    role: 'admin',
-    status: true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  },
-]
-
-let nextUserId = 2
-
 const { getPrisma, dbAvailable } = require('../utils/prisma')
+const { mockUsers, getNextUserId } = require('../utils/mockData')
 
 // ========== 注册 ==========
 async function register(req, res) {
@@ -108,7 +91,7 @@ async function register(req, res) {
 
     const hashedPassword = await hashPassword(password)
     const newUser = {
-      id: nextUserId++, username, password: hashedPassword, nickname, email,
+      id: getNextUserId(), username, password: hashedPassword, nickname, email,
       avatar: null, role: 'user', status: true,
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     }
