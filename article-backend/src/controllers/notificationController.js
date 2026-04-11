@@ -21,7 +21,6 @@ async function getMyNotifications(req, res) {
         prisma.notification.count({ where: { userId } }),
         prisma.notification.count({ where: { userId, isRead: false } }),
       ])
-      await prisma.$disconnect()
       return res.json({ success: true, data: { list, total, unreadCount, page, pageSize } })
     }
 
@@ -48,11 +47,9 @@ async function markAsRead(req, res) {
       const prisma = getPrisma()
       const notif = await prisma.notification.findUnique({ where: { id } })
       if (!notif || notif.userId !== userId) {
-        await prisma.$disconnect()
-        return res.status(404).json({ success: false, message: '通知不存在' })
+          return res.status(404).json({ success: false, message: '通知不存在' })
       }
       await prisma.notification.update({ where: { id }, data: { isRead: true } })
-      await prisma.$disconnect()
       return res.json({ success: true, message: '已标记为已读' })
     }
 
@@ -75,7 +72,6 @@ async function markAllRead(req, res) {
         where: { userId, isRead: false },
         data: { isRead: true },
       })
-      await prisma.$disconnect()
       return res.json({ success: true, message: '全部已标记为已读' })
     }
 
@@ -94,7 +90,6 @@ async function createNotification({ userId, type, title, content, relatedId }) {
     await prisma.notification.create({
       data: { userId, type, title, content, relatedId },
     })
-    await prisma.$disconnect()
   } else {
     mockNotifications.push({
       id: mockNotifications.length + 1,

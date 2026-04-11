@@ -42,10 +42,10 @@
           <router-link v-if="userStore.userInfo?.role === 'admin'" to="/admin/dashboard" class="nav-link" :class="{ active: $route.path.startsWith('/admin') }">
             管理
           </router-link>
-          <router-link v-if="isEditor" to="/article/create" class="nav-link" :class="{ active: $route.path === '/article/create' }">
+          <router-link v-if="isAuthor" to="/article/create" class="nav-link" :class="{ active: $route.path === '/article/create' }">
             写文章
           </router-link>
-          <router-link v-if="isEditor" to="/my/articles" class="nav-link" :class="{ active: $route.path === '/my/articles' }">
+          <router-link v-if="isAuthor" to="/my/articles" class="nav-link" :class="{ active: $route.path === '/my/articles' }">
             我的
           </router-link>
 
@@ -101,7 +101,7 @@
                 <el-dropdown-item v-if="userStore.userInfo?.role === 'admin'" command="/admin/applications">
                   <el-icon><Checked /></el-icon>角色审批
                 </el-dropdown-item>
-                <el-dropdown-item v-if="isEditor" command="/my/recycle">
+                <el-dropdown-item v-if="isAuthor" command="/my/recycle">
                   <el-icon><Delete /></el-icon>回收站
                 </el-dropdown-item>
                 <el-dropdown-item command="/my/collects">
@@ -142,9 +142,9 @@ const notifList = ref([])
 const unreadCount = ref(0)
 let pollTimer = null
 
-const isEditor = computed(() => {
+const isAuthor = computed(() => {
   const role = userStore.userInfo?.role
-  return ['admin', 'editor', 'author'].includes(role)
+  return ['admin', 'author'].includes(role)
 })
 
 function startPolling() {

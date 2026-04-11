@@ -23,7 +23,6 @@
         </el-input>
         <el-select v-model="filterRole" placeholder="角色筛选" clearable style="width: 140px;" @change="fetchData">
           <el-option label="管理员" value="admin" />
-          <el-option label="编辑" value="editor" />
           <el-option label="作者" value="author" />
           <el-option label="普通用户" value="user" />
         </el-select>
@@ -45,7 +44,6 @@
               @change="(val) => handleRoleChange(row.id, val)"
             >
               <el-option label="管理员" value="admin" />
-              <el-option label="编辑" value="editor" />
               <el-option label="作者" value="author" />
               <el-option label="普通用户" value="user" />
             </el-select>

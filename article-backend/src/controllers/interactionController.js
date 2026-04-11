@@ -31,8 +31,8 @@ async function toggleLike(req, res) {
       const prisma = getPrisma()
       // 检查文章是否存在
       const article = await prisma.article.findUnique({ where: { id: articleId } })
-      if (!article) { await prisma.$disconnect(); throw new NotFoundError('文章不存在或已删除') }
-      if (article.status !== 'published') { await prisma.$disconnect(); throw new ForbiddenError('该文章未公开，无法点赞') }
+      if (!article) { throw new NotFoundError('文章不存在或已删除') }
+      if (article.status !== 'published') { throw new ForbiddenError('该文章未公开，无法点赞') }
 
       const existing = await prisma.like.findUnique({ where: { userId_articleId: { userId, articleId } } })
 
@@ -48,7 +48,6 @@ async function toggleLike(req, res) {
       }
       const art = await prisma.article.findUnique({ where: { id: articleId }, select: { likeCount: true } })
       likeCount = art.likeCount
-      await prisma.$disconnect()
       return res.json({ success: true, data: { liked, likeCount }, message: liked ? '点赞成功' : '已取消点赞' })
     }
 
@@ -80,7 +79,6 @@ async function getLikeStatus(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const existing = await prisma.like.findUnique({ where: { userId_articleId: { userId, articleId } } })
-      await prisma.$disconnect()
       return res.json({ success: true, data: { liked: !!existing } })
     }
     return res.json({ success: true, data: { liked: mockLikes.has(`${userId}-${articleId}`) } })
@@ -106,7 +104,6 @@ async function getMyLikes(req, res) {
         }),
         prisma.like.count({ where: { userId } }),
       ])
-      await prisma.$disconnect()
       return res.json({ success: true, data: { list: likes.map(l => ({ ...l.article, likedAt: l.createdAt })), total, page, pageSize } })
     }
 
@@ -139,7 +136,7 @@ async function toggleCollect(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const article = await prisma.article.findUnique({ where: { id: articleId } })
-      if (!article) { await prisma.$disconnect(); throw new NotFoundError('文章不存在或已删除') }
+      if (!article) { throw new NotFoundError('文章不存在或已删除') }
 
       const existing = await prisma.collect.findUnique({ where: { userId_articleId: { userId, articleId } } })
 
@@ -155,7 +152,6 @@ async function toggleCollect(req, res) {
       }
       const art = await prisma.article.findUnique({ where: { id: articleId }, select: { collectCount: true } })
       collectCount = art.collectCount
-      await prisma.$disconnect()
       return res.json({ success: true, data: { collected, collectCount }, message: collected ? '收藏成功' : '已取消收藏' })
     }
 
@@ -185,7 +181,6 @@ async function getCollectStatus(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const existing = await prisma.collect.findUnique({ where: { userId_articleId: { userId, articleId } } })
-      await prisma.$disconnect()
       return res.json({ success: true, data: { collected: !!existing } })
     }
     return res.json({ success: true, data: { collected: mockCollects.has(`${userId}-${articleId}`) } })
@@ -211,7 +206,6 @@ async function getMyCollects(req, res) {
         }),
         prisma.collect.count({ where: { userId } }),
       ])
-      await prisma.$disconnect()
       return res.json({ success: true, data: { list: collects.map(c => ({ ...c.article, collectedAt: c.createdAt })), total, page, pageSize } })
     }
 
@@ -247,15 +241,14 @@ async function createComment(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const article = await prisma.article.findUnique({ where: { id: articleId } })
-      if (!article) { await prisma.$disconnect(); throw new NotFoundError('文章不存在或已删除') }
-      if (article.status === 'private') { await prisma.$disconnect(); throw new ForbiddenError('该文章为私密状态，无法评论') }
-      if (article.status === 'draft') { await prisma.$disconnect(); throw new NotFoundError('该文章尚未发布') }
+      if (!article) { throw new NotFoundError('文章不存在或已删除') }
+      if (article.status === 'private') { throw new ForbiddenError('该文章为私密状态，无法评论') }
+      if (article.status === 'draft') { throw new NotFoundError('该文章尚未发布') }
 
       const comment = await prisma.comment.create({
         data: { content: content.trim(), articleId, userId },
         include: { user: { select: { id: true, nickname: true, username: true, avatar: true } } },
       })
-      await prisma.$disconnect()
 
       // 通知文章作者（不通知自己）
       if (article.userId !== userId) {
@@ -313,7 +306,6 @@ async function getComments(req, res) {
         }),
         prisma.comment.count({ where: { articleId: parseInt(articleId) } }),
       ])
-      await prisma.$disconnect()
       return res.json({ success: true, data: { list: comments, total, page: p, pageSize: ps } })
     }
 
@@ -338,15 +330,13 @@ async function deleteComment(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const comment = await prisma.comment.findUnique({ where: { id }, include: { user: { select: { id: true } } } })
-      if (!comment) { await prisma.$disconnect(); throw new NotFoundError('评论不存在或已被删除') }
+      if (!comment) { throw new NotFoundError('评论不存在或已被删除') }
 
       if (comment.userId !== userId && userRole !== 'admin') {
-        await prisma.$disconnect()
-        throw new ForbiddenError('只能删除自己的评论，或联系管理员处理')
+          throw new ForbiddenError('只能删除自己的评论，或联系管理员处理')
       }
 
       await prisma.comment.delete({ where: { id } })
-      await prisma.$disconnect()
       return res.json({ success: true, message: '删除成功' })
     }
 
@@ -379,7 +369,6 @@ async function getMyComments(req, res) {
         }),
         prisma.comment.count({ where: { userId } }),
       ])
-      await prisma.$disconnect()
       return res.json({ success: true, data: { list: comments, total, page, pageSize } })
     }
 

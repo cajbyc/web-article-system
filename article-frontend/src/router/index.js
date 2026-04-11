@@ -43,13 +43,13 @@ const routes = [
         path: 'article/create',
         name: 'ArticleCreate',
         component: () => import('../views/ArticleEditorView.vue'),
-        meta: { requiresAuth: true, roles: ['editor', 'author', 'admin'] },
+        meta: { requiresAuth: true, roles: ['author', 'admin'] },
       },
       {
         path: 'article/edit/:id',
         name: 'ArticleEdit',
         component: () => import('../views/ArticleEditorView.vue'),
-        meta: { requiresAuth: true, roles: ['editor', 'author', 'admin'] },
+        meta: { requiresAuth: true, roles: ['author', 'admin'] },
       },
       {
         path: 'article/:id',
@@ -65,13 +65,13 @@ const routes = [
         path: 'my/articles',
         name: 'MyArticles',
         component: () => import('../views/MyArticlesView.vue'),
-        meta: { requiresAuth: true, roles: ['editor', 'author', 'admin'] },
+        meta: { requiresAuth: true, roles: ['author', 'admin'] },
       },
       {
         path: 'my/recycle',
         name: 'RecycleBin',
         component: () => import('../views/RecycleBinView.vue'),
-        meta: { requiresAuth: true, roles: ['editor', 'author', 'admin'] },
+        meta: { requiresAuth: true, roles: ['author', 'admin'] },
       },
       {
         path: 'my/collects',

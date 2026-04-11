@@ -10,7 +10,7 @@ node_modules/
 dist/
 
 # Prisma
-prisma/migrations/
+# migrations/ should be tracked in version control
 
 # Logs
 logs/

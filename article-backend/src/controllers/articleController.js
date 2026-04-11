@@ -26,10 +26,10 @@ async function getArticleList(req, res) {
       const prisma = getPrisma()
       const where = {}
       // 公开列表只显示已发布
-      if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'editor')) {
+      if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'author')) {
         where.status = 'published'
       } else {
-        // 编辑/管理员可看更多
+        // 作者/管理员可看更多
         if (status) where.status = status
         else where.status = { in: ['published'] }
       }
@@ -50,13 +50,12 @@ async function getArticleList(req, res) {
         }),
         prisma.article.count({ where }),
       ])
-      await prisma.$disconnect()
       return res.json({ success: true, data: { list: articles, total, page, pageSize } })
     }
 
     // ===== 内存模拟模式 =====
     let filtered = mockArticles.filter(a => a.status === 'published')
-    if (req.user && ['admin', 'editor'].includes(req.user.role)) {
+    if (req.user && ['admin', 'author'].includes(req.user.role)) {
       filtered = [...mockArticles]
       if (status) filtered = filtered.filter(a => a.status === status)
     }
@@ -94,12 +93,11 @@ async function getArticleById(req, res) {
         where: { id },
         include: { category: true, user: { select: { id: true, nickname: true, username: true, avatar: true } } },
       })
-      if (!article) { await prisma.$disconnect(); return res.status(404).json({ success: false, message: '文章不存在' }) }
+      if (!article) { return res.status(404).json({ success: false, message: '文章不存在' }) }
 
       // 权限检查
-      if (article.status !== 'published' && (!req.user || (article.userId !== req.user.id && !['admin', 'editor'].includes(req.user.role)))) {
-        await prisma.$disconnect()
-        return res.status(403).json({ success: false, message: '无权查看该文章' })
+      if (article.status !== 'published' && (!req.user || (article.userId !== req.user.id && !['admin', 'author'].includes(req.user.role)))) {
+          return res.status(403).json({ success: false, message: '无权查看该文章' })
       }
 
       // 增加阅读量
@@ -113,7 +111,6 @@ async function getArticleById(req, res) {
         collected = !!(await prisma.collect.findUnique({ where: { userId_articleId: { userId: req.user.id, articleId: id } } }))
       }
 
-      await prisma.$disconnect()
       return res.json({ success: true, data: { ...article, isLiked: liked, isCollected: collected } })
     }
 
@@ -149,13 +146,12 @@ async function createArticle(req, res) {
       const prisma = getPrisma()
       // 检查分类是否存在
       const cat = await prisma.category.findUnique({ where: { id: parseInt(categoryId) } })
-      if (!cat) { await prisma.$disconnect(); return res.status(400).json({ success: false, message: '分类不存在' }) }
+      if (!cat) { return res.status(400).json({ success: false, message: '分类不存在' }) }
 
       const article = await prisma.article.create({
         data: { title: title.trim(), content, cover: cover || null, categoryId: parseInt(categoryId), status, userId },
         include: { category: true },
       })
-      await prisma.$disconnect()
       return res.status(201).json({ success: true, message: '发布成功', data: article })
     }
 
@@ -191,12 +187,11 @@ async function updateArticle(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const article = await prisma.article.findUnique({ where: { id } })
-      if (!article) { await prisma.$disconnect(); return res.status(404).json({ success: false, message: '文章不存在' }) }
+      if (!article) { return res.status(404).json({ success: false, message: '文章不存在' }) }
 
       // 权限：只能编辑自己的文章或管理员编辑已发布的
       if (article.userId !== req.user.id && req.user.role !== 'admin') {
-        await prisma.$disconnect()
-        return res.status(403).json({ success: false, message: '无权编辑该文章' })
+          return res.status(403).json({ success: false, message: '无权编辑该文章' })
       }
 
       const updateData = {}
@@ -207,7 +202,6 @@ async function updateArticle(req, res) {
       if (status !== undefined) updateData.status = status
 
       const updated = await prisma.article.update({ where: { id }, data: updateData, include: { category: true } })
-      await prisma.$disconnect()
       return res.json({ success: true, message: '更新成功', data: updated })
     }
 
@@ -241,11 +235,10 @@ async function deleteArticle(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const article = await prisma.article.findUnique({ where: { id } })
-      if (!article) { await prisma.$disconnect(); return res.status(404).json({ success: false, message: '文章不存在' }) }
+      if (!article) { return res.status(404).json({ success: false, message: '文章不存在' }) }
 
       if (article.userId !== req.user.id && req.user.role !== 'admin') {
-        await prisma.$disconnect()
-        return res.status(403).json({ success: false, message: '无权删除该文章' })
+          return res.status(403).json({ success: false, message: '无权删除该文章' })
       }
 
       // 移入回收站
@@ -257,7 +250,6 @@ async function deleteArticle(req, res) {
         },
       })
       await prisma.article.delete({ where: { id } })
-      await prisma.$disconnect()
       return res.json({ success: true, message: '已移至回收站' })
     }
 
@@ -300,7 +292,6 @@ async function getMyArticles(req, res) {
         }),
         prisma.article.count({ where }),
       ])
-      await prisma.$disconnect()
       return res.json({ success: true, data: { list: articles, total, page, pageSize } })
     }
 
@@ -338,7 +329,6 @@ async function getRecycleBin(req, res) {
         }),
         prisma.recycleBin.count({ where: { userId } }),
       ])
-      await prisma.$disconnect()
       return res.json({ success: true, data: { list: items, total, page, pageSize } })
     }
 
@@ -358,8 +348,8 @@ async function restoreArticle(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const item = await prisma.recycleBin.findUnique({ where: { id } })
-      if (!item) { await prisma.$disconnect(); return res.status(404).json({ success: false, message: '回收站记录不存在' }) }
-      if (item.userId !== req.user.id) { await prisma.$disconnect(); return res.status(403).json({ success: false, message: '无权操作' }) }
+      if (!item) { return res.status(404).json({ success: false, message: '回收站记录不存在' }) }
+      if (item.userId !== req.user.id) { return res.status(403).json({ success: false, message: '无权操作' }) }
 
       const restored = await prisma.article.create({
         data: {
@@ -368,7 +358,6 @@ async function restoreArticle(req, res) {
         },
       })
       await prisma.recycleBin.delete({ where: { id } })
-      await prisma.$disconnect()
       return res.json({ success: true, message: '恢复成功', data: restored })
     }
 
@@ -395,11 +384,10 @@ async function permanentDelete(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const item = await prisma.recycleBin.findUnique({ where: { id } })
-      if (!item) { await prisma.$disconnect(); return res.status(404).json({ success: false, message: '记录不存在' }) }
-      if (item.userId !== req.user.id) { await prisma.$disconnect(); return res.status(403).json({ success: false, message: '无权操作' }) }
+      if (!item) { return res.status(404).json({ success: false, message: '记录不存在' }) }
+      if (item.userId !== req.user.id) { return res.status(403).json({ success: false, message: '无权操作' }) }
 
       await prisma.recycleBin.delete({ where: { id } })
-      await prisma.$disconnect()
       return res.json({ success: true, message: '彻底删除成功' })
     }
 
@@ -421,7 +409,6 @@ async function getCategories(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const cats = await prisma.category.findMany({ orderBy: { sort: 'asc' } })
-      await prisma.$disconnect()
       return res.json({ success: true, data: cats })
     }
     return res.json({ success: true, data: mockCategories })
@@ -441,7 +428,6 @@ async function getPublicStats(req, res) {
         prisma.comment.count(),
         prisma.like.count(),
       ])
-      await prisma.$disconnect()
       return res.json({ success: true, data: { articleCount, userCount, commentCount, likeCount } })
     }
     // 内存模拟
@@ -468,10 +454,9 @@ async function createCategory(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const existing = await prisma.category.findUnique({ where: { name: name.trim() } })
-      if (existing) { await prisma.$disconnect(); return res.status(400).json({ success: false, message: '分类名称已存在' }) }
+      if (existing) { return res.status(400).json({ success: false, message: '分类名称已存在' }) }
 
       const cat = await prisma.category.create({ data: { name: name.trim(), sort: sort || 0 } })
-      await prisma.$disconnect()
       return res.status(201).json({ success: true, message: '分类创建成功', data: cat })
     }
 
@@ -496,18 +481,17 @@ async function updateCategory(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const cat = await prisma.category.findUnique({ where: { id } })
-      if (!cat) { await prisma.$disconnect(); return res.status(404).json({ success: false, message: '分类不存在' }) }
+      if (!cat) { return res.status(404).json({ success: false, message: '分类不存在' }) }
 
       if (name && name.trim() !== cat.name) {
         const dup = await prisma.category.findUnique({ where: { name: name.trim() } })
-        if (dup) { await prisma.$disconnect(); return res.status(400).json({ success: false, message: '分类名称已存在' }) }
+        if (dup) { return res.status(400).json({ success: false, message: '分类名称已存在' }) }
       }
 
       const updateData = {}
       if (name !== undefined) updateData.name = name.trim()
       if (sort !== undefined) updateData.sort = sort
       const updated = await prisma.category.update({ where: { id }, data: updateData })
-      await prisma.$disconnect()
       return res.json({ success: true, message: '分类更新成功', data: updated })
     }
 
@@ -529,13 +513,12 @@ async function deleteCategory(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const cat = await prisma.category.findUnique({ where: { id } })
-      if (!cat) { await prisma.$disconnect(); return res.status(404).json({ success: false, message: '分类不存在' }) }
+      if (!cat) { return res.status(404).json({ success: false, message: '分类不存在' }) }
 
       const articleCount = await prisma.article.count({ where: { categoryId: id } })
-      if (articleCount > 0) { await prisma.$disconnect(); return res.status(400).json({ success: false, message: `该分类下有 ${articleCount} 篇文章，无法删除` }) }
+      if (articleCount > 0) { return res.status(400).json({ success: false, message: `该分类下有 ${articleCount} 篇文章，无法删除` }) }
 
       await prisma.category.delete({ where: { id } })
-      await prisma.$disconnect()
       return res.json({ success: true, message: '分类已删除' })
     }
 
@@ -571,7 +554,6 @@ async function getUserArticles(req, res) {
         }),
         prisma.article.count({ where }),
       ])
-      await prisma.$disconnect()
       return res.json({ success: true, data: { list: articles, total, page, pageSize } })
     }
 

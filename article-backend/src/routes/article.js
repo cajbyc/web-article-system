@@ -18,10 +18,10 @@ router.get('/stats', getPublicStats)
 router.get('/', getArticleList)
 
 // ========== 我的文章（需登录，必须在 /:id 之前）==========
-router.get('/my', authMiddleware(), checkRole(['editor', 'author', 'admin']), getMyArticles)
+router.get('/my', authMiddleware(), checkRole(['author', 'admin']), getMyArticles)
 
 // ========== 回收站（需登录，必须在 /:id 之前）==========
-router.get('/recycle', authMiddleware(), checkRole(['editor', 'author', 'admin']), getRecycleBin)
+router.get('/recycle', authMiddleware(), checkRole(['author', 'admin']), getRecycleBin)
 
 // ========== 某用户的公开文章（必须在 /:id 之前）==========
 router.get('/user/:id', getUserArticles)
@@ -32,10 +32,10 @@ router.get('/:id', getArticleById)
 // 以下接口均需登录
 router.use(authMiddleware())
 
-// ========== 发布/编辑/删除（需 editor/author 或 admin）==========
-router.post('/', checkRole(['editor', 'author', 'admin']), createArticle)
-router.put('/:id', checkRole(['editor', 'author', 'admin']), updateArticle)
-router.delete('/:id', checkRole(['editor', 'author', 'admin']), deleteArticle)
+// ========== 发布/编辑/删除（需 author 或 admin）==========
+router.post('/', checkRole(['author', 'admin']), createArticle)
+router.put('/:id', checkRole(['author', 'admin']), updateArticle)
+router.delete('/:id', checkRole(['author', 'admin']), deleteArticle)
 router.post('/:id/restore', restoreArticle)
 router.delete('/:id/permanent', permanentDelete)
 

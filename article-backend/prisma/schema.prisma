@@ -15,7 +15,7 @@ model User {
   nickname  String
   email     String    @unique
   avatar    String?   // 头像 URL
-  role      String    @default("user") // admin | editor | author | user
+  role      String    @default("user") // admin | author | user
   status    Boolean   @default(true)   // true=启用, false=禁用
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -24,6 +24,7 @@ model User {
   comments  Comment[]
   likes     Like[]
   collects  Collect[]
+  roleApplications RoleApplication[]
 
   @@map("users")
 }
@@ -132,4 +133,20 @@ model Notification {
   createdAt  DateTime @default(now())
 
   @@map("notifications")
+}
+
+model RoleApplication {
+  id          Int       @id @default(autoincrement())
+  userId      Int
+  user        User      @relation(fields: [userId], references: [id])
+  fromRole    String    // 原角色
+  toRole      String    // 申请的目标角色
+  reason      String    @default("") // 申请理由
+  status      String    @default("pending") // pending | approved | rejected
+  reviewedBy  Int?      // 审批人 ID
+  reviewNote  String    @default("") // 审批备注
+  createdAt   DateTime  @default(now())
+  reviewedAt  DateTime?
+
+  @@map("role_applications")
 }

@@ -15,23 +15,22 @@ async function applyRole(req, res) {
     const { toRole, reason } = req.body
 
     if (!toRole) throw new BadRequestError('请指定申请的目标角色')
-    const allowedRoles = ['author', 'editor']
-    if (!allowedRoles.includes(toRole)) throw new BadRequestError('只能申请成为作者或编辑')
+    const allowedRoles = ['author']
+    if (!allowedRoles.includes(toRole)) throw new BadRequestError('只能申请成为作者')
 
     if (dbAvailable) {
       const prisma = getPrisma()
       const user = await prisma.user.findUnique({ where: { id: userId } })
-      if (!user) { await prisma.$disconnect(); throw new NotFoundError('用户不存在') }
+      if (!user) { throw new NotFoundError('用户不存在') }
       if (allowedRoles.includes(user.role) || user.role === 'admin') {
-        await prisma.$disconnect()
-        throw new ConflictError(`你已是${user.role === 'admin' ? '管理员' : user.role === 'author' ? '作者' : '编辑'}，无需申请`)
+          throw new ConflictError(`你已是${user.role === 'admin' ? '管理员' : '作者'}，无需申请`)
       }
 
       // 检查是否有待审核的申请
       const existing = await prisma.roleApplication.findFirst({
         where: { userId, status: 'pending' },
       })
-      if (existing) { await prisma.$disconnect(); throw new ConflictError('你已有待审核的申请，请等待处理') }
+      if (existing) { throw new ConflictError('你已有待审核的申请，请等待处理') }
 
       const application = await prisma.roleApplication.create({
         data: {
@@ -40,7 +39,6 @@ async function applyRole(req, res) {
           status: 'pending',
         },
       })
-      await prisma.$disconnect()
       return res.status(201).json({ success: true, message: '申请已提交，请等待管理员审核', data: application })
     }
 
@@ -48,7 +46,7 @@ async function applyRole(req, res) {
     const user = mockUsers.find(u => u.id === userId)
     if (!user) throw new NotFoundError('用户不存在')
     if (allowedRoles.includes(user.role) || user.role === 'admin') {
-      throw new ConflictError(`你已是${user.role === 'admin' ? '管理员' : user.role === 'author' ? '作者' : '编辑'}，无需申请`)
+      throw new ConflictError(`你已是${user.role === 'admin' ? '管理员' : '作者'}，无需申请`)
     }
 
     const pendingApp = mockRoleApplications.find(a => a.userId === userId && a.status === 'pending')
@@ -88,7 +86,6 @@ async function getMyApplication(req, res) {
         where: { userId },
         orderBy: { createdAt: 'desc' },
       })
-      await prisma.$disconnect()
       return res.json({ success: true, data: application || null })
     }
 
@@ -116,7 +113,6 @@ async function getApplications(req, res) {
         orderBy: { createdAt: 'desc' },
         include: { user: { select: { id: true, username: true, nickname: true } } },
       })
-      await prisma.$disconnect()
       return res.json({ success: true, data: list })
     }
 
@@ -144,8 +140,8 @@ async function reviewApplication(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const application = await prisma.roleApplication.findUnique({ where: { id: parseInt(id) } })
-      if (!application) { await prisma.$disconnect(); throw new NotFoundError('申请不存在') }
-      if (application.status !== 'pending') { await prisma.$disconnect(); throw new ConflictError('该申请已被处理') }
+      if (!application) { throw new NotFoundError('申请不存在') }
+      if (application.status !== 'pending') { throw new ConflictError('该申请已被处理') }
 
       const updated = await prisma.roleApplication.update({
         where: { id: parseInt(id) },
@@ -164,7 +160,6 @@ async function reviewApplication(req, res) {
           data: { role: application.toRole },
         })
       }
-      await prisma.$disconnect()
 
       // 发送通知
       await createNotification({

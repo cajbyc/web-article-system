@@ -70,8 +70,7 @@ async function register(req, res) {
       })
 
       if (existingUser) {
-        await prisma.$disconnect()
-        throw new ConflictError(existingUser.username === username ? '用户名已被注册' : '邮箱已被注册')
+          throw new ConflictError(existingUser.username === username ? '用户名已被注册' : '邮箱已被注册')
       }
 
       const hashedPassword = await hashPassword(password)
@@ -79,7 +78,6 @@ async function register(req, res) {
         data: { username, password: hashedPassword, nickname, email, role: 'user', status: true },
         select: { id: true, username: true, nickname: true, email: true, role: true, avatar: true, createdAt: true },
       })
-      await prisma.$disconnect()
       return res.status(201).json({ success: true, message: '注册成功', data: user })
     }
 
@@ -126,7 +124,6 @@ async function login(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       user = await prisma.user.findUnique({ where: { username } })
-      await prisma.$disconnect()
     } else {
       user = mockUsers.find(u => u.username === username)
     }
@@ -198,7 +195,6 @@ async function getCurrentUser(req, res) {
         where: { id: userId },
         select: { id: true, username: true, nickname: true, email: true, avatar: true, role: true, status: true, createdAt: true },
       })
-      await prisma.$disconnect()
 
       if (!user) throw new NotFoundError('当前登录用户不存在，可能已被删除')
       return res.json({ success: true, data: user })
@@ -232,7 +228,7 @@ async function updateProfile(req, res) {
       // 检查邮箱是否被其他用户占用
       if (email) {
         const existing = await prisma.user.findFirst({ where: { email, NOT: { id: userId } } })
-        if (existing) { await prisma.$disconnect(); throw new ConflictError('该邮箱已被其他用户使用') }
+        if (existing) { throw new ConflictError('该邮箱已被其他用户使用') }
       }
       const updateData = {}
       if (nickname !== undefined) updateData.nickname = nickname.trim()
@@ -244,7 +240,6 @@ async function updateProfile(req, res) {
         data: updateData,
         select: { id: true, username: true, nickname: true, email: true, avatar: true, role: true, status: true, createdAt: true },
       })
-      await prisma.$disconnect()
       return res.json({ success: true, message: '资料更新成功', data: user })
     }
 
@@ -283,14 +278,13 @@ async function changePassword(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const user = await prisma.user.findUnique({ where: { id: userId } })
-      if (!user) { await prisma.$disconnect(); throw new NotFoundError('用户不存在') }
+      if (!user) { throw new NotFoundError('用户不存在') }
 
       const isMatch = await comparePassword(oldPassword, user.password)
-      if (!isMatch) { await prisma.$disconnect(); throw new UnauthorizedError('旧密码不正确') }
+      if (!isMatch) { throw new UnauthorizedError('旧密码不正确') }
 
       const hashedPassword = await hashPassword(newPassword)
       await prisma.user.update({ where: { id: userId }, data: { password: hashedPassword } })
-      await prisma.$disconnect()
       return res.json({ success: true, message: '密码修改成功' })
     }
 
@@ -327,10 +321,9 @@ async function getUserPublicProfile(req, res) {
         where: { id: userId },
         select: { id: true, username: true, nickname: true, avatar: true, role: true, createdAt: true },
       })
-      if (!user) { await prisma.$disconnect(); return res.status(404).json({ success: false, message: '用户不存在' }) }
+      if (!user) { return res.status(404).json({ success: false, message: '用户不存在' }) }
 
       const articleCount = await prisma.article.count({ where: { userId, status: 'published' } })
-      await prisma.$disconnect()
       return res.json({ success: true, data: { ...user, articleCount } })
     }
 

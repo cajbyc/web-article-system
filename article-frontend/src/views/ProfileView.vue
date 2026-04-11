@@ -116,8 +116,8 @@ import request from '../utils/request'
 
 const userStore = useUserStore()
 
-const ROLE_LABEL_MAP = Object.freeze({ admin: '管理员', editor: '编辑', author: '作者', user: '普通用户' })
-const ROLE_TAG_TYPE_MAP = Object.freeze({ admin: 'danger', editor: 'warning', author: '', user: 'info' })
+const ROLE_LABEL_MAP = Object.freeze({ admin: '管理员', author: '作者', user: '普通用户' })
+const ROLE_TAG_TYPE_MAP = Object.freeze({ admin: 'danger', author: '', user: 'info' })
 
 const myApplication = ref(null)
 

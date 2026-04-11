@@ -4,20 +4,20 @@ const { getPrisma, dbAvailable } = require('../utils/prisma')
 
 const mockAdminUsers = [
   { id: 1, username: 'admin', nickname: '管理员', email: 'admin@test.com', role: 'admin', status: true, createdAt: '2026-01-01T00:00:00Z' },
-  { id: 2, username: 'editor01', nickname: '编辑小明', email: 'editor01@test.com', role: 'editor', status: true, createdAt: '2026-02-15T08:00:00Z' },
+  { id: 2, username: 'author01', nickname: '作者小红', email: 'author01@test.com', role: 'author', status: true, createdAt: '2026-02-15T08:00:00Z' },
   { id: 3, username: 'author01', nickname: '作者小红', email: 'author01@test.com', role: 'author', status: true, createdAt: '2026-03-10T12:00:00Z' },
   { id: 4, username: 'user01', nickname: '普通用户A', email: 'user01@test.com', role: 'user', status: true, createdAt: '2026-03-20T09:30:00Z' },
   { id: 5, username: 'user02', nickname: '普通用户B', email: 'user02@test.com', role: 'user', status: false, createdAt: '2026-04-01T14:20:00Z' },
 ]
 
 const mockAdminArticles = [
-  { id: 1, title: 'Vue3 组合式 API 完全指南', categoryId: 3, status: 'published', viewCount: 128, likeCount: 15, collectCount: 8, userId: 2, authorName: '编辑小明', categoryName: '技术分享', createdAt: '2026-04-08T10:00:00Z' },
+  { id: 1, title: 'Vue3 组合式 API 完全指南', categoryId: 3, status: 'published', viewCount: 128, likeCount: 15, collectCount: 8, userId: 2, authorName: '作者小红', categoryName: '技术分享', createdAt: '2026-04-08T10:00:00Z' },
   { id: 2, title: 'Pinia 状态管理最佳实践', categoryId: 3, status: 'published', viewCount: 96, likeCount: 8, collectCount: 4, userId: 3, authorName: '作者小红', categoryName: '技术分享', createdAt: '2026-04-07T14:30:00Z' },
   { id: 3, title: 'Element Plus 组件库使用技巧', categoryId: 1, status: 'published', viewCount: 74, likeCount: 5, collectCount: 2, userId: 1, authorName: '管理员', categoryName: '学习笔记', createdAt: '2026-04-06T09:20:00Z' },
 ]
 
 const mockAdminComments = [
-  { id: 1, articleId: 1, articleTitle: 'Vue3 组合式 API 完全指南', userId: 2, userName: '编辑小明', content: '写得非常清晰，学到了很多！', createdAt: '2026-04-08T12:00:00Z' },
+  { id: 1, articleId: 1, articleTitle: 'Vue3 组合式 API 完全指南', userId: 2, userName: '作者小红', content: '写得非常清晰，学到了很多！', createdAt: '2026-04-08T12:00:00Z' },
   { id: 2, articleId: 1, articleTitle: 'Vue3 组合式 API 完全指南', userId: 3, userName: '作者小红', content: '组合式 API 确实比选项式更灵活，支持！', createdAt: '2026-04-08T13:30:00Z' },
   { id: 3, articleId: 2, articleTitle: 'Pinia 状态管理最佳实践', userId: 1, userName: '管理员', content: 'Pinia 的 TypeScript 支持很好', createdAt: '2026-04-07T16:00:00Z' },
   { id: 4, articleId: 1, articleTitle: 'Vue3 组合式 API 完全指南', userId: 1, userName: '管理员', content: '补充：setup语法糖配合script setup更简洁', createdAt: '2026-04-08T14:20:00Z' },
@@ -43,7 +43,6 @@ async function getDashboardStats(req, res) {
         }),
       ])
 
-      await prisma.$disconnect()
       const categoryData = categoryStats.map(c => ({ name: c.name, count: c._count.articles }))
 
       return res.json({
@@ -117,7 +116,6 @@ async function getUserList(req, res) {
         }),
         prisma.user.count({ where }),
       ])
-      await prisma.$disconnect()
       return res.json({ success: true, data: { list: users, total, page, pageSize } })
     }
 
@@ -146,7 +144,7 @@ async function updateUserRole(req, res) {
   try {
     const id = parseInt(req.params.id)
     const { role } = req.body
-    const validRoles = ['user', 'editor', 'author', 'admin']
+    const validRoles = ['user', 'author', 'admin']
 
     if (!validRoles.includes(role)) {
       return res.status(400).json({ success: false, message: '无效的角色值' })
@@ -160,19 +158,17 @@ async function updateUserRole(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const targetUser = await prisma.user.findUnique({ where: { id } })
-      if (!targetUser) { await prisma.$disconnect(); return res.status(404).json({ success: false, message: '用户不存在' }) }
+      if (!targetUser) { return res.status(404).json({ success: false, message: '用户不存在' }) }
 
       // 检查是否为最后一个管理员
       if (targetUser.role === 'admin' && role !== 'admin') {
         const adminCount = await prisma.user.count({ where: { role: 'admin' } })
         if (adminCount <= 1) {
-          await prisma.$disconnect()
-          return res.status(400).json({ success: false, message: '系统中至少需要保留一个管理员账号' })
+              return res.status(400).json({ success: false, message: '系统中至少需要保留一个管理员账号' })
         }
       }
 
       await prisma.user.update({ where: { id }, data: { role } })
-      await prisma.$disconnect()
     } else {
       // 内存模式
       const user = mockAdminUsers.find(u => u.id === id)
@@ -212,10 +208,9 @@ async function updateUserStatus(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const user = await prisma.user.findUnique({ where: { id } })
-      if (!user) { await prisma.$disconnect(); return res.status(404).json({ success: false, message: '用户不存在' }) }
+      if (!user) { return res.status(404).json({ success: false, message: '用户不存在' }) }
 
       await prisma.user.update({ where: { id }, data: { status } })
-      await prisma.$disconnect()
     } else {
       const user = mockAdminUsers.find(u => u.id === id)
       if (!user) return res.status(404).json({ success: false, message: '用户不存在' })
@@ -244,18 +239,16 @@ async function deleteUser(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const targetUser = await prisma.user.findUnique({ where: { id } })
-      if (!targetUser) { await prisma.$disconnect(); return res.status(404).json({ success: false, message: '用户不存在' }) }
+      if (!targetUser) { return res.status(404).json({ success: false, message: '用户不存在' }) }
 
       if (targetUser.role === 'admin') {
-        await prisma.$disconnect()
-        return res.status(400).json({ success: false, message: '不能删除管理员账号' })
+          return res.status(400).json({ success: false, message: '不能删除管理员账号' })
       }
 
       // 检查是否有文章
       const articleCount = await prisma.article.count({ where: { userId: id } })
       if (articleCount > 0) {
-        await prisma.$disconnect()
-        return res.status(400).json({
+          return res.status(400).json({
           success: false,
           message: `该用户有 ${articleCount} 篇文章，请先处理文章后再删除用户`,
         })
@@ -266,7 +259,6 @@ async function deleteUser(req, res) {
       await prisma.collect.deleteMany({ where: { userId: id } })
       await prisma.comment.deleteMany({ where: { userId: id } })
       await prisma.user.delete({ where: { id } })
-      await prisma.$disconnect()
     } else {
       // 内存模式
       const idx = mockAdminUsers.findIndex(u => u.id === id)
@@ -314,7 +306,6 @@ async function getAdminArticles(req, res) {
         }),
         prisma.article.count({ where }),
       ])
-      await prisma.$disconnect()
       return res.json({ success: true, data: { list: articles, total, page, pageSize } })
     }
 
@@ -338,14 +329,13 @@ async function forceDeleteArticle(req, res) {
     if (dbAvailable) {
       const prisma = getPrisma()
       const article = await prisma.article.findUnique({ where: { id } })
-      if (!article) { await prisma.$disconnect(); return res.status(404).json({ success: false, message: '文章不存在' }) }
+      if (!article) { return res.status(404).json({ success: false, message: '文章不存在' }) }
 
       // 删除所有关联数据
       await prisma.like.deleteMany({ where: { articleId: id } })
       await prisma.collect.deleteMany({ where: { articleId: id } })
       await prisma.comment.deleteMany({ where: { articleId: id } })
       await prisma.article.delete({ where: { id } })
-      await prisma.$disconnect()
     } else {
       const idx = mockAdminArticles.findIndex(a => a.id === id)
       if (idx === -1) return res.status(404).json({ success: false, message: '文章不存在' })
@@ -396,7 +386,6 @@ async function getAllComments(req, res) {
         }),
         prisma.comment.count({ where }),
       ])
-      await prisma.$disconnect()
       return res.json({ success: true, data: { list: comments, total, page, pageSize } })
     }
 
@@ -431,7 +420,6 @@ async function batchDeleteComments(req, res) {
       const result = await prisma.comment.deleteMany({
         where: { id: { in: ids } },
       })
-      await prisma.$disconnect()
 
       await req.recordLog?.(req.user.username, `批量删除了 ${result.count} 条评论`, getClientIp(req))
       return res.json({ success: true, message: `成功删除 ${result.count} 条评论` })

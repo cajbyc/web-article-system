@@ -58,8 +58,8 @@ const page = ref(1)
 const pageSize = 10
 const total = ref(0)
 
-const ROLE_LABEL_MAP = { admin: '管理员', editor: '编辑', author: '作者', user: '普通用户' }
-const ROLE_TAG_TYPE_MAP = { admin: 'danger', editor: 'warning', author: '', user: 'info' }
+const ROLE_LABEL_MAP = { admin: '管理员', author: '作者', user: '普通用户' }
+const ROLE_TAG_TYPE_MAP = { admin: 'danger', author: '', user: 'info' }
 
 const roleLabel = computed(() => ROLE_LABEL_MAP[profile.value?.role] || '普通用户')
 const roleTagType = computed(() => ROLE_TAG_TYPE_MAP[profile.value?.role] || 'info')

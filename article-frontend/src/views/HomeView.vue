@@ -13,7 +13,7 @@
           <button v-if="!userStore.isLoggedIn" class="hero-btn ghost" @click="$router.push('/register')">
             加入我们
           </button>
-          <button v-if="isEditor" class="hero-btn ghost" @click="$router.push('/article/create')">
+          <button v-if="isAuthor" class="hero-btn ghost" @click="$router.push('/article/create')">
             开始写作
           </button>
           <button v-if="isAdmin" class="hero-btn ghost" @click="$router.push('/admin/dashboard')">
@@ -96,9 +96,9 @@ import { getArticleList, getCategories, getPublicStats } from '../api/article'
 import { useUserStore } from '../stores/user'
 
 const userStore = useUserStore()
-const isEditor = computed(() => {
+const isAuthor = computed(() => {
   const role = userStore.userInfo?.role
-  return role === 'admin' || role === 'editor' || role === 'author'
+  return role === 'admin' || role === 'author'
 })
 const isAdmin = computed(() => userStore.userInfo?.role === 'admin')
 

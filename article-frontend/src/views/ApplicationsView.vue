@@ -125,7 +125,7 @@ async function submitReview() {
 }
 
 function roleLabel(role) {
-  return { author: '作者', editor: '编辑' }[role] || role
+  return { author: '作者' }[role] || role
 }
 
 function statusType(status) {
